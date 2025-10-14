@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- View: Giao diện màn hình thêm/sửa công việc -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".controller.AddTaskActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar_add_task"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@drawable/ic_back"
+            app:title="Add Task" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="What's on the Agenda?">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edit_text_task_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Priority"
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+            <RadioGroup
+                android:id="@+id/radio_group_priority"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <RadioButton android:id="@+id/radio_priority_low" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Low"/>
+                <RadioButton android:id="@+id/radio_priority_medium" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Medium" android:checked="true"/>
+                <RadioButton android:id="@+id/radio_priority_high" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="High"/>
+            </RadioGroup>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Category"
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+            <RadioGroup
+                android:id="@+id/radio_group_category"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <RadioButton android:id="@+id/radio_category_personal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Personal" android:checked="true"/>
+                <RadioButton android:id="@+id/radio_category_work" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Work"/>
+                <RadioButton android:id="@+id/radio_category_wishlist" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Wishlist"/>
+            </RadioGroup>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Notes">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edit_text_notes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:minLines="3" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <Button
+        android:id="@+id/button_save_task"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save Task"
+        android:layout_margin="16dp"/>
+
+</LinearLayout>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_menu"
+        android:icon="@drawable/ic_menu"
+        android:title="Menu"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_list"
+        android:icon="@drawable/ic_list_alt"
+        android:title="List"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_calendar"
+        android:icon="@drawable/ic_calendar_today"
+        android:title="Calendar"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_notifications"
+        android:icon="@drawable/ic_notifications"
+        android:title="Notifications"
+        app:showAsAction="always" />
+</menu>
+

@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">BTL</string>
+    <string name="my_tasks">My Tasks</string>
+    <string name="all">All</string>
+    <string name="personal">Personal</string>
+    <string name="work">Work</string>
+    <string name="wishlist">Wishlist</string>
+    <string name="menu">Menu</string>
+    <string name="list">List</string>
+    <string name="calendar">Calendar</string>
+    <string name="notifications">Notifications</string>
+    <string name="add_new_task">Add new task</string>
+
+</resources>
