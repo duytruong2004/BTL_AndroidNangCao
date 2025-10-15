@@ -25,6 +25,7 @@
             android:name=".controller.AddTaskActivity"
             android:parentActivityName=".controller.MainActivity" />
         <activity android:name=".controller.EditTaskActivity" />
+        <activity android:name=".controller.CalendarActivity" />
     </application>
 
 </manifest>

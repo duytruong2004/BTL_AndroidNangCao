@@ -81,9 +81,11 @@ public class MainActivity extends AppCompatActivity {
         btnMenu.setOnClickListener(v ->
                 Toast.makeText(this, "Menu Clicked", Toast.LENGTH_SHORT).show());
 
-        btnCalendar.setOnClickListener(v ->
-                Toast.makeText(this, "Calendar Clicked", Toast.LENGTH_SHORT).show());
-
+        btnCalendar.setOnClickListener(v -> {
+            // Thay thế Toast bằng Intent
+            Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
+            startActivity(intent);
+        });
         btnNotifications.setOnClickListener(v ->
                 Toast.makeText(this, "Notifications Clicked", Toast.LENGTH_SHORT).show());
 

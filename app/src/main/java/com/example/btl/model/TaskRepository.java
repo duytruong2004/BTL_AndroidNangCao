@@ -32,6 +32,9 @@ public class TaskRepository {
     public LiveData<List<Task>> getAllTasks() {
         return allTasks;
     }
+    public LiveData<List<Task>> getTasksForDate(long startOfDay, long endOfDay) {
+        return taskDao.getTasksForDate(startOfDay, endOfDay);
+    }
 
     public LiveData<List<Task>> getTasksByCategory(String category) {
         return taskDao.getTasksByCategory(category);

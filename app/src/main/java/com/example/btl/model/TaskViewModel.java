@@ -33,5 +33,8 @@ public class TaskViewModel extends AndroidViewModel {
     public LiveData<List<Task>> getTasksByCategory(String category) {
         return repository.getTasksByCategory(category);
     }
+    public LiveData<List<Task>> getTasksForDate(long startOfDay, long endOfDay) {
+        return repository.getTasksForDate(startOfDay, endOfDay);
+    }
 }
 

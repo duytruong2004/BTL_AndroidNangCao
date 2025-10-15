@@ -30,4 +30,6 @@ public interface TaskDao {
 
     @Query("SELECT * FROM tasks WHERE category = :category ORDER BY priority DESC")
     LiveData<List<Task>> getTasksByCategory(String category);
+    @Query("SELECT * FROM tasks WHERE dueDate >= :startOfDay AND dueDate < :endOfDay ORDER BY priority DESC")
+    LiveData<List<Task>> getTasksForDate(long startOfDay, long endOfDay);
 }
