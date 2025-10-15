@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_back"
-            app:title="Thêm Nghiệm Vụ" />
+            app:title="Sửa Nghiệm Vụ" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <ScrollView
@@ -34,7 +34,7 @@
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Tên Nghiệm vụ mới ">
+                android:hint="Tên Nghiệm Vụ ">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edit_text_task_title"
@@ -117,7 +117,7 @@
         android:id="@+id/button_save_task"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Lưu Nghiệm Vụ"
+        android:text="CẬP NHẬT"
         android:layout_margin="16dp"/>
 
 </LinearLayout>

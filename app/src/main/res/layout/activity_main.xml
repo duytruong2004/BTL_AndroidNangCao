@@ -18,7 +18,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
-            android:text="My Tasks"
+            android:text="TO DO LIST"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5" />
 
         <com.google.android.material.chip.ChipGroup
@@ -34,28 +34,28 @@
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="All" />
+                android:text="Tất Cả" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_personal"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Personal" />
+                android:text="Riêng Tư" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_work"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Work" />
+                android:text="Công Việc" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_wishlist"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Wishlist" />
+                android:text=" Yêu Thích" />
         </com.google.android.material.chip.ChipGroup>
 
 

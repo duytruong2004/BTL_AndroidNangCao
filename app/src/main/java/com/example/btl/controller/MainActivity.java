@@ -123,8 +123,18 @@ public class MainActivity extends AppCompatActivity {
                             .show();
 
                 } else { // Vuốt sang phải để SỬA
-                    Toast.makeText(MainActivity.this, "Chức năng sửa...", Toast.LENGTH_SHORT).show();
-                    // Gọi notifyItemChanged để RecyclerView vẽ lại item
+                    Intent intent = new Intent(MainActivity.this, EditTaskActivity.class);
+                    // Truyền toàn bộ dữ liệu của task qua intent
+                    intent.putExtra(EditTaskActivity.EXTRA_ID, task.getId());
+                    intent.putExtra(EditTaskActivity.EXTRA_TITLE, task.getTitle());
+                    intent.putExtra(EditTaskActivity.EXTRA_NOTES, task.getNotes());
+                    intent.putExtra(EditTaskActivity.EXTRA_PRIORITY, task.getPriority());
+                    intent.putExtra(EditTaskActivity.EXTRA_CATEGORY, task.getCategory());
+                    intent.putExtra(EditTaskActivity.EXTRA_DUE_DATE, task.getDueDate());
+                    intent.putExtra(EditTaskActivity.EXTRA_IS_COMPLETED, task.isCompleted());
+                    startActivity(intent);
+
+                    // Vẽ lại item để nó không bị kẹt ở trạng thái vuốt
                     adapter.notifyItemChanged(position);
                 }
             }
@@ -135,11 +145,11 @@ public class MainActivity extends AppCompatActivity {
                 new RecyclerViewSwipeDecorator.Builder(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
                         .addSwipeLeftBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.priority_high))
                         .addSwipeLeftActionIcon(R.drawable.ic_delete)
-                        .addSwipeLeftLabel("Delete")
+                        .addSwipeLeftLabel("Xóa")
                         .setSwipeLeftLabelColor(ContextCompat.getColor(MainActivity.this, R.color.white))
                         .addSwipeRightBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.green))
                         .addSwipeRightActionIcon(R.drawable.ic_edit)
-                        .addSwipeRightLabel("Edit")
+                        .addSwipeRightLabel("Sửa")
                         .setSwipeRightLabelColor(ContextCompat.getColor(MainActivity.this, R.color.white))
                         .create()
                         .decorate();
