@@ -15,7 +15,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.btl.R;
 import com.example.btl.model.Task;
 import java.util.Objects;
-
+import java.text.DateFormat;
+import java.util.Date;
 // Nâng cấp lên ListAdapter để tương thích với ViewModel và LiveData
 public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
 
@@ -56,7 +57,14 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
         Task currentTask = getItem(position);
         if (currentTask != null) {
             holder.taskTitle.setText(currentTask.getTitle());
-            holder.subtaskInfo.setText("0/1"); // Placeholder for subtask info
+            holder.subtaskInfo.setText("0/1");
+            if (currentTask.getDueDate() > 0) {
+                String formattedDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(new Date(currentTask.getDueDate()));
+                holder.dueDate.setText(formattedDate);
+                holder.dueDate.setVisibility(View.VISIBLE);
+            } else {
+                holder.dueDate.setVisibility(View.GONE);
+            }// Placeholder for subtask info
 
             holder.priorityIcon.setVisibility(View.VISIBLE);
             switch (currentTask.getPriority()) {
@@ -98,6 +106,9 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
             }
         }
     }
+    public Task getTaskAt(int position) {
+        return getItem(position);
+    }
 
     // ViewHolder giữ nguyên
     static class TaskViewHolder extends RecyclerView.ViewHolder {
@@ -105,6 +116,7 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
         private final TextView subtaskInfo;
         private final ImageView priorityIcon;
         private final ImageView categoryIcon;
+        private final TextView dueDate;
 
         private TaskViewHolder(View itemView) {
             super(itemView);
@@ -112,6 +124,7 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
             subtaskInfo = itemView.findViewById(R.id.text_view_subtask_info);
             priorityIcon = itemView.findViewById(R.id.image_view_priority);
             categoryIcon = itemView.findViewById(R.id.image_view_category);
+            dueDate = itemView.findViewById(R.id.text_view_item_due_date);
         }
     }
 }

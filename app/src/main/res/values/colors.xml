@@ -21,4 +21,5 @@
     <color name="category_work">#1976D2</color> <!-- Blue -->
     <color name="category_personal">#00796B</color> <!-- Teal -->
     <color name="category_wishlist">@color/purple_500</color> <!-- Purple -->
+    <color name="green">#4CAF50</color>
 </resources>

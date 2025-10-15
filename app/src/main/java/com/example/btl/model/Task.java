@@ -16,13 +16,15 @@ public class Task {
     private int priority; // 1: Low, 2: Medium, 3: High
     private String category; // e.g., "Personal", "Work"
     private boolean isCompleted;
+    private long dueDate;
 
-    public Task(String title, String notes, int priority, String category, boolean isCompleted) {
+    public Task(String title, String notes, int priority, String category, boolean isCompleted,long dueDate) {
         this.title = title;
         this.notes = notes;
         this.priority = priority;
         this.category = category;
         this.isCompleted = isCompleted;
+        this.dueDate = dueDate;
     }
 
     // Getters
@@ -32,7 +34,11 @@ public class Task {
     public int getPriority() { return priority; }
     public String getCategory() { return category; }
     public boolean isCompleted() { return isCompleted; }
+    public long getDueDate() { return dueDate; }
 
     // Setters
     public void setId(int id) { this.id = id; }
+    public void setDueDate(long dueDate) { this.dueDate = dueDate; }
+
+
 }

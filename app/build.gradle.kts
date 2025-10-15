@@ -47,4 +47,5 @@ dependencies {
     implementation ("androidx.lifecycle:lifecycle-viewmodel:2.4.1")
     implementation ("androidx.lifecycle:lifecycle-livedata:2.4.1")
     annotationProcessor( "androidx.lifecycle:lifecycle-compiler:2.4.1")
+    implementation("it.xabaras.android:recyclerview-swipedecorator:1.4")
 }

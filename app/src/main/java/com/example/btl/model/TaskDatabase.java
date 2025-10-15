@@ -11,7 +11,7 @@ import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
 // Model: Lớp cơ sở dữ liệu Room
-@Database(entities = {Task.class}, version = 1)
+@Database(entities = {Task.class}, version = 2)
 public abstract class TaskDatabase extends RoomDatabase {
 
     private static TaskDatabase instance;
@@ -46,10 +46,13 @@ public abstract class TaskDatabase extends RoomDatabase {
 
         @Override
         protected Void doInBackground(Void... voids) {
+            // Lấy thời gian hiện tại để làm dữ liệu mẫu
+            long currentTime = System.currentTimeMillis();
+
             // Thêm dữ liệu mẫu khi CSDL được tạo lần đầu
-            taskDao.insert(new Task("Task 1", "Notes for task 1", 3, "Work", false));
-            taskDao.insert(new Task("Task 2", "Notes for task 2", 2, "Personal", false));
-            taskDao.insert(new Task("Task 3", "Notes for task 3", 1, "Wishlist", false));
+            taskDao.insert(new Task("Task 1", "Notes for task 1", 3, "Work", false, currentTime));
+            taskDao.insert(new Task("Task 2", "Notes for task 2", 2, "Personal", false, currentTime + 86400000)); // Thêm 1 ngày
+            taskDao.insert(new Task("Task 3", "Notes for task 3", 1, "Wishlist", false, currentTime + 172800000)); // Thêm 2 ngày
             return null;
         }
     }
