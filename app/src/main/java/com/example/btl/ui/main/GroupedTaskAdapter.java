@@ -1,4 +1,4 @@
-package com.example.btl.controller;
+package com.example.btl.ui.main; // <-- Package đã thay đổi
 
 import android.content.Context;
 import android.graphics.Paint;
@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.btl.R;
-import com.example.btl.model.Task;
+import com.example.btl.data.model.Task; // <-- Import đã thay đổi
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -66,6 +66,7 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
         }
     };
 
+    // --- ViewHolder cho Header ---
     class HeaderViewHolder extends RecyclerView.ViewHolder {
         TextView headerTitle;
         ImageView expandArrow;
@@ -96,6 +97,7 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
         }
     }
 
+    // --- ViewHolder cho Task ---
     class TaskViewHolder extends RecyclerView.ViewHolder {
         TextView taskTitle; TextView subtaskInfo; ImageView priorityIcon;
         ImageView categoryIcon; TextView dueDate; CheckBox checkBoxCompleted;
@@ -107,6 +109,7 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
             categoryIcon = itemView.findViewById(R.id.image_view_category);
             dueDate = itemView.findViewById(R.id.text_view_item_due_date);
             checkBoxCompleted = itemView.findViewById(R.id.checkbox_completed);
+
             checkBoxCompleted.setOnClickListener(v -> {
                 int position = getBindingAdapterPosition();
                 if (toggleListener != null && position != RecyclerView.NO_POSITION) {
@@ -124,7 +127,9 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
                 String formattedDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(new Date(currentTask.getDueDate()));
                 dueDate.setText(formattedDate); dueDate.setVisibility(View.VISIBLE);
             } else { dueDate.setVisibility(View.GONE); }
+
             checkBoxCompleted.setChecked(currentTask.isCompleted());
+
             if (currentTask.isCompleted()) {
                 taskTitle.setPaintFlags(taskTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                 subtaskInfo.setText("1/1"); itemView.setAlpha(0.5f);
@@ -132,13 +137,16 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
                 taskTitle.setPaintFlags(taskTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
                 subtaskInfo.setText("0/1"); itemView.setAlpha(1.0f);
             }
+
             priorityIcon.setVisibility(View.VISIBLE);
             switch (currentTask.getPriority()) {
+                // Đã sửa: 1=Low, 2=Medium, 3=High (theo code AddEdit)
                 case 1: priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_low)); break;
                 case 2: priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_medium)); break;
                 case 3: priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_high)); break;
                 default: priorityIcon.setVisibility(View.INVISIBLE); break;
             }
+
             if (currentTask.getCategory() != null && !currentTask.getCategory().isEmpty()) {
                 categoryIcon.setVisibility(View.VISIBLE);
                 switch (currentTask.getCategory()) {
@@ -151,7 +159,9 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
         }
     }
 
+    // --- Các hàm Adapter cơ bản ---
     @Override public int getItemViewType(int position) { return getItem(position).getItemType(); }
+
     @NonNull @Override public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         if (viewType == TYPE_HEADER) {
@@ -162,12 +172,14 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
             return new TaskViewHolder(view);
         }
     }
+
     @Override public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         ListItem item = getItem(position);
         if (holder instanceof HeaderViewHolder) { ((HeaderViewHolder) holder).bind((HeaderItem) item); }
         else if (holder instanceof TaskViewHolder) { ((TaskViewHolder) holder).bind((TaskItem) item); }
     }
 
+    // --- Các hàm tiện ích và Listener ---
     public Task getTaskObjectAt(int position) {
         ListItem item = getItem(position);
         if (item instanceof TaskItem) { return ((TaskItem) item).getTask(); }

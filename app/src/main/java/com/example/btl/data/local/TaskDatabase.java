@@ -1,5 +1,4 @@
-package com.example.btl.model;
-
+package com.example.btl.data.local; // <-- Package đã thay đổi
 
 import android.content.Context;
 import android.os.AsyncTask;
@@ -10,7 +9,8 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-// Model: Lớp cơ sở dữ liệu Room
+import com.example.btl.data.model.Task; // <-- Import đã thay đổi
+
 @Database(entities = {Task.class}, version = 2)
 public abstract class TaskDatabase extends RoomDatabase {
 
@@ -23,7 +23,7 @@ public abstract class TaskDatabase extends RoomDatabase {
             instance = Room.databaseBuilder(context.getApplicationContext(),
                             TaskDatabase.class, "task_database")
                     .fallbackToDestructiveMigration()
-                    .addCallback(roomCallback) // Để thêm dữ liệu mẫu
+                    .addCallback(roomCallback)
                     .build();
         }
         return instance;
@@ -46,13 +46,10 @@ public abstract class TaskDatabase extends RoomDatabase {
 
         @Override
         protected Void doInBackground(Void... voids) {
-            // Lấy thời gian hiện tại để làm dữ liệu mẫu
             long currentTime = System.currentTimeMillis();
-
-            // Thêm dữ liệu mẫu khi CSDL được tạo lần đầu
             taskDao.insert(new Task("Task 1", "Notes for task 1", 3, "Work", false, currentTime));
-            taskDao.insert(new Task("Task 2", "Notes for task 2", 2, "Personal", false, currentTime + 86400000)); // Thêm 1 ngày
-            taskDao.insert(new Task("Task 3", "Notes for task 3", 1, "Wishlist", false, currentTime + 172800000)); // Thêm 2 ngày
+            taskDao.insert(new Task("Task 2", "Notes for task 2", 2, "Personal", false, currentTime + 86400000));
+            taskDao.insert(new Task("Task 3", "Notes for task 3", 1, "Wishlist", false, currentTime + 172800000));
             return null;
         }
     }

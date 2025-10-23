@@ -1,4 +1,4 @@
-package com.example.btl.controller;
+package com.example.btl.ui.calendar; // <-- Package đã thay đổi
 
 import android.content.Context;
 import android.graphics.Paint;
@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.btl.R;
-import com.example.btl.model.Task;
+import com.example.btl.data.model.Task; // <-- Import đã thay đổi
 import java.util.Objects;
 import java.text.DateFormat;
 import java.util.Date;
@@ -68,37 +68,32 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
                 holder.dueDate.setVisibility(View.GONE);
             }
 
-            // --- PHẦN CẬP NHẬT GIAO DIỆN HOÀN THÀNH ---
+            // --- GIAO DIỆN HOÀN THÀNH ---
             holder.checkBoxCompleted.setChecked(currentTask.isCompleted());
 
             if (currentTask.isCompleted()) {
-                // Thêm gạch ngang
                 holder.taskTitle.setPaintFlags(holder.taskTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                // Cập nhật text "1/1"
                 holder.subtaskInfo.setText("1/1");
-                // Làm mờ toàn bộ item
                 holder.itemView.setAlpha(0.5f);
             } else {
-                // Xóa gạch ngang
                 holder.taskTitle.setPaintFlags(holder.taskTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
-                // Cập nhật text "0/1"
                 holder.subtaskInfo.setText("0/1");
-                // Hiển thị rõ item
                 holder.itemView.setAlpha(1.0f);
             }
             // --- KẾT THÚC CẬP NHẬT ---
 
 
             holder.priorityIcon.setVisibility(View.VISIBLE);
+            // Sửa logic: 1=Low, 2=Medium, 3=High (theo code AddEdit)
             switch (currentTask.getPriority()) {
-                case 1: // High
-                    holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_high));
+                case 1: // Low
+                    holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_low));
                     break;
                 case 2: // Medium
                     holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_medium));
                     break;
-                case 3: // Low
-                    holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_low));
+                case 3: // High
+                    holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_high));
                     break;
                 default:
                     holder.priorityIcon.setVisibility(View.INVISIBLE);
@@ -162,7 +157,7 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
         }
     }
 
-    // Interface và Setter (giữ nguyên)
+    // Interface và Setter
     public interface OnTaskToggleListener {
         void onTaskToggled(Task task);
     }

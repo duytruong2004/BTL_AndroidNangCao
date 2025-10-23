@@ -1,23 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- View: Giao diện màn hình thêm/sửa công việc -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".controller.AddTaskActivity">
-
-    <com.google.android.material.appbar.AppBarLayout
+    tools:context=".ui.addedit.AddEditTaskActivity"> <com.google.android.material.appbar.AppBarLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar_add_task"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar_add_task"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/ic_back"
-            app:title="Thêm Nghiệm Vụ" />
-    </com.google.android.material.appbar.AppBarLayout>
+        android:layout_height="?attr/actionBarSize"
+        app:navigationIcon="@drawable/ic_back"
+        app:title="Thêm Nghiệm Vụ" /> </com.google.android.material.appbar.AppBarLayout>
 
     <ScrollView
         android:layout_width="match_parent"
@@ -34,7 +30,7 @@
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Tên Nghiệm vụ mới ">
+                android:hint="Tên Nghiệm Vụ ">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edit_text_task_title"
@@ -104,6 +100,7 @@
                 android:text="Select a time for notification"
                 android:drawableEnd="@drawable/ic_add"
                 android:gravity="center_vertical"/>
+
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
@@ -121,12 +118,11 @@
 
         </LinearLayout>
     </ScrollView>
-X`
+
     <Button
         android:id="@+id/button_save_task"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Lưu Nghiệm Vụ"
-        android:layout_margin="16dp"/>
+        android:text="LƯU NGHIỆM VỤ" android:layout_margin="16dp"/>
 
 </LinearLayout>

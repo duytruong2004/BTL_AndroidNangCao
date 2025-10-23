@@ -1,8 +1,11 @@
-package com.example.btl.controller; // Hoặc package bạn muốn
+package com.example.btl.ui.main; // <-- Package đã thay đổi
+
+// Import com.example.btl.controller.ListItem đã được thay đổi
+import com.example.btl.ui.main.ListItem;
 
 public class HeaderItem implements ListItem {
     private String title;
-    private boolean isExpanded = true; // Mặc định mở rộng
+    private boolean isExpanded = true;
 
     public HeaderItem(String title) {
         this.title = title;

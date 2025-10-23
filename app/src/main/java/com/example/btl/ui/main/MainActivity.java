@@ -1,4 +1,4 @@
-package com.example.btl.controller;
+package com.example.btl.ui.main;
 
 import android.content.Intent;
 import android.graphics.Canvas;
@@ -17,14 +17,19 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.btl.R;
-import com.example.btl.model.Task;
-import com.example.btl.model.TaskViewModel;
+
+// --- Các import đã được cập nhật ---
+import com.example.btl.data.model.Task;
+import com.example.btl.ui.addedit.AddEditTaskActivity;
+import com.example.btl.ui.calendar.CalendarActivity;
+import com.example.btl.ui.viewmodel.TaskViewModel;
+import com.example.btl.util.DateUtil;
+
 import com.google.android.material.bottomappbar.BottomAppBar;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +40,7 @@ public class MainActivity extends AppCompatActivity
         implements GroupedTaskAdapter.OnTaskToggleListener, GroupedTaskAdapter.OnHeaderClickListener {
 
     private TaskViewModel taskViewModel;
-    private GroupedTaskAdapter adapter; // Sử dụng adapter mới
+    private GroupedTaskAdapter adapter;
     private LiveData<List<Task>> currentLiveData = null;
     private Observer<List<Task>> taskObserver = null;
     private Map<String, Boolean> headerExpansionState = new HashMap<>();
@@ -51,13 +56,13 @@ public class MainActivity extends AppCompatActivity
         BottomAppBar bottomAppBar = findViewById(R.id.bottom_app_bar);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setItemAnimator(null); // Tắt animation mặc định
+        recyclerView.setItemAnimator(null);
         recyclerView.setHasFixedSize(true);
 
-        adapter = new GroupedTaskAdapter(this); // Khởi tạo adapter mới
+        adapter = new GroupedTaskAdapter(this);
         recyclerView.setAdapter(adapter);
         adapter.setOnTaskToggleListener(this);
-        adapter.setOnHeaderClickListener(this); // Set listener header
+        adapter.setOnHeaderClickListener(this);
 
         taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
 
@@ -67,11 +72,10 @@ public class MainActivity extends AppCompatActivity
         };
 
         fabAddTask.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, AddTaskActivity.class);
+            Intent intent = new Intent(MainActivity.this, AddEditTaskActivity.class);
             startActivity(intent);
         });
 
-        // ChipGroup - Gọi hàm ViewModel mới (SortedByDateGroup)
         chipGroup.setOnCheckedChangeListener((group, checkedId) -> {
             removeObserver();
             if (checkedId == R.id.chip_all) {
@@ -88,11 +92,9 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        // Hiển thị ban đầu (SortedByDateGroup)
         currentLiveData = taskViewModel.getAllTasksSortedByDateGroup();
         currentLiveData.observe(this, taskObserver);
 
-        // --- BottomAppBar Buttons (giữ nguyên) ---
         ImageButton btnList = findViewById(R.id.btn_list);
         ImageButton btnMenu = findViewById(R.id.btn_menu);
         ImageButton btnCalendar = findViewById(R.id.btn_calendar);
@@ -105,7 +107,6 @@ public class MainActivity extends AppCompatActivity
         });
         btnNotifications.setOnClickListener(v -> Toast.makeText(this, "Notifications Clicked", Toast.LENGTH_SHORT).show());
 
-        // --- ItemTouchHelper (giữ nguyên) ---
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,
                 ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
@@ -132,16 +133,15 @@ public class MainActivity extends AppCompatActivity
                             .setOnCancelListener(dialog -> adapter.notifyItemChanged(position))
                             .show();
                 } else { // Sửa
-                    Intent intent = new Intent(MainActivity.this, EditTaskActivity.class);
-                    intent.putExtra(EditTaskActivity.EXTRA_ID, task.getId());
-                    intent.putExtra(EditTaskActivity.EXTRA_TITLE, task.getTitle());
-                    intent.putExtra(EditTaskActivity.EXTRA_NOTES, task.getNotes());
-                    intent.putExtra(EditTaskActivity.EXTRA_PRIORITY, task.getPriority());
-                    intent.putExtra(EditTaskActivity.EXTRA_CATEGORY, task.getCategory());
-                    intent.putExtra(EditTaskActivity.EXTRA_DUE_DATE, task.getDueDate());
-                    intent.putExtra(EditTaskActivity.EXTRA_IS_COMPLETED, task.isCompleted());
+                    Intent intent = new Intent(MainActivity.this, AddEditTaskActivity.class);
+                    intent.putExtra(AddEditTaskActivity.EXTRA_ID, task.getId());
+                    intent.putExtra(AddEditTaskActivity.EXTRA_TITLE, task.getTitle());
+                    intent.putExtra(AddEditTaskActivity.EXTRA_NOTES, task.getNotes());
+                    intent.putExtra(AddEditTaskActivity.EXTRA_PRIORITY, task.getPriority());
+                    intent.putExtra(AddEditTaskActivity.EXTRA_CATEGORY, task.getCategory());
+                    intent.putExtra(AddEditTaskActivity.EXTRA_DUE_DATE, task.getDueDate());
+                    intent.putExtra(AddEditTaskActivity.EXTRA_IS_COMPLETED, task.isCompleted());
                     startActivity(intent);
-                    adapter.notifyItemChanged(position);
                 }
             }
 
@@ -171,19 +171,40 @@ public class MainActivity extends AppCompatActivity
         }).attachToRecyclerView(recyclerView);
     }
 
-    // --- onTaskToggled (giữ nguyên) ---
     @Override
-    public void onTaskToggled(Task task) {
-        boolean newCompletedState = !task.isCompleted();
-        Task taskToUpdate = new Task(
-                task.getTitle(), task.getNotes(), task.getPriority(), task.getCategory(),
-                newCompletedState, task.getDueDate()
-        );
-        taskToUpdate.setId(task.getId());
-        taskViewModel.update(taskToUpdate);
+    protected void onResume() {
+        super.onResume();
+
+        // Giữ lại phần sửa lỗi UI vuốt
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
     }
 
-    // --- onHeaderClick (giữ nguyên) ---
+    // --- CẬP NHẬT: onTaskToggled (ĐÃ SỬA LẠI LOGIC ĐÚNG) ---
+    @Override
+    public void onTaskToggled(Task task) {
+        // 1. Lấy trạng thái mới
+        boolean newCompletedState = !task.isCompleted();
+
+        // 2. Tạo một đối tượng Task MỚI HOÀN TOÀN (Quan trọng)
+        Task taskToUpdate = new Task(
+                task.getTitle(),
+                task.getNotes(),
+                task.getPriority(),
+                task.getCategory(),
+                newCompletedState, // Đặt trạng thái mới
+                task.getDueDate()
+        );
+
+        // 3. Đặt ID cho task mới để Room biết update task nào
+        taskToUpdate.setId(task.getId());
+
+        // 4. Gửi task MỚI đi
+        taskViewModel.update(taskToUpdate);
+    }
+    // --- KẾT THÚC CẬP NHẬT ---
+
     @Override
     public void onHeaderClick(HeaderItem headerItem, int position) {
         boolean isCurrentlyExpanded = headerExpansionState.getOrDefault(headerItem.getTitle(), true);
@@ -194,16 +215,14 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    // --- removeObserver, onDestroy (giữ nguyên) ---
     private void removeObserver() { if (currentLiveData != null && taskObserver != null) { currentLiveData.removeObserver(taskObserver); } }
     @Override protected void onDestroy() { super.onDestroy(); removeObserver(); }
 
-    // --- groupTasksByDate (giữ nguyên) ---
     private List<ListItem> groupTasksByDate(List<Task> tasks) {
         List<ListItem> items = new ArrayList<>();
         if (tasks == null) return items;
 
-        long todayStartMillis = getStartOfDayMillis(System.currentTimeMillis());
+        long todayStartMillis = DateUtil.getStartOfDayMillis(System.currentTimeMillis());
         long tomorrowStartMillis = todayStartMillis + (24 * 60 * 60 * 1000);
 
         String currentHeaderTitle = null;
@@ -232,14 +251,5 @@ public class MainActivity extends AppCompatActivity
             }
         }
         return items;
-    }
-
-    // --- getStartOfDayMillis (giữ nguyên) ---
-    private long getStartOfDayMillis(long millis) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(millis);
-        calendar.set(Calendar.HOUR_OF_DAY, 0); calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0); calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTimeInMillis();
     }
 }

@@ -1,6 +1,7 @@
-package com.example.btl.controller; // Hoặc package bạn muốn
+package com.example.btl.ui.main; // <-- Package đã thay đổi
 
-import com.example.btl.model.Task;
+import com.example.btl.data.model.Task; // <-- Import đã thay đổi
+import com.example.btl.ui.main.ListItem; // <-- Import đã thay đổi
 
 public class TaskItem implements ListItem {
     private Task task;

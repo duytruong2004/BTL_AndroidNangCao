@@ -1,4 +1,4 @@
-package com.example.btl.controller;
+package com.example.btl.ui.calendar;
 
 import android.os.Bundle;
 import android.widget.CalendarView;
@@ -10,14 +10,14 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.btl.R;
-// Thêm import cho Task
-import com.example.btl.model.Task;
-import com.example.btl.model.TaskViewModel;
+
+import com.example.btl.data.model.Task;
+import com.example.btl.ui.viewmodel.TaskViewModel;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
-// 1. Thêm "implements TaskAdapter.OnTaskToggleListener"
 public class CalendarActivity extends AppCompatActivity implements TaskAdapter.OnTaskToggleListener {
 
     private TaskViewModel taskViewModel;
@@ -41,12 +41,10 @@ public class CalendarActivity extends AppCompatActivity implements TaskAdapter.O
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(taskAdapter);
 
-        // 2. Thiết lập listener cho adapter (GIỐNG NHƯ MAINACTIVITY)
         taskAdapter.setOnTaskToggleListener(this);
 
         taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
 
-        // Xử lý sự kiện khi người dùng chọn một ngày mới
         calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
             @Override
             public void onSelectedDayChange(@NonNull CalendarView view, int year, int month, int dayOfMonth) {
@@ -56,40 +54,34 @@ public class CalendarActivity extends AppCompatActivity implements TaskAdapter.O
             }
         });
 
-        // Tải công việc cho ngày hôm nay khi mới mở màn hình
         loadTasksForDate(Calendar.getInstance());
     }
 
     private void loadTasksForDate(Calendar calendar) {
-        // Hiển thị ngày đã chọn
         selectedDateText.setText(dateFormatter.format(calendar.getTime()));
 
-        // Thiết lập thời gian về đầu ngày (00:00:00)
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         long startOfDay = calendar.getTimeInMillis();
 
-        // Thiết lập thời gian về cuối ngày (23:59:59)
         calendar.add(Calendar.DAY_OF_YEAR, 1);
         calendar.add(Calendar.MILLISECOND, -1);
         long endOfDay = calendar.getTimeInMillis();
 
-        // Lấy và hiển thị các công việc trong ngày đó
-        // (Chúng ta chỉ observe 1 lần để tránh lỗi khi observe nhiều LiveData)
         taskViewModel.getTasksForDate(startOfDay, endOfDay).observe(this, tasks -> {
             taskAdapter.submitList(tasks);
         });
     }
 
-    // 3. Thêm phương thức onTaskToggled (GIỐNG HỆT MAINACTIVITY)
+    // --- CẬP NHẬT: onTaskToggled (ĐÃ SỬA LẠI LOGIC ĐÚNG) ---
     @Override
     public void onTaskToggled(Task task) {
         // 1. Lấy trạng thái mới
         boolean newCompletedState = !task.isCompleted();
 
-        // 2. Tạo một đối tượng Task MỚI HOÀN TOÀN
+        // 2. Tạo một đối tượng Task MỚI HOÀN TOÀN (Quan trọng)
         Task taskToUpdate = new Task(
                 task.getTitle(),
                 task.getNotes(),
@@ -105,4 +97,5 @@ public class CalendarActivity extends AppCompatActivity implements TaskAdapter.O
         // 4. Gửi task MỚI đi
         taskViewModel.update(taskToUpdate);
     }
+    // --- KẾT THÚC CẬP NHẬT ---
 }

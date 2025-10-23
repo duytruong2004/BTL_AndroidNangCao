@@ -4,72 +4,68 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".controller.MainActivity">
+    tools:context=".ui.main.MainActivity"> <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <!-- Nội dung chính -->
-    <LinearLayout
+    <TextView
+        android:id="@+id/text_view_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:text="TO DO LIST"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chip_group_filter"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        app:checkedChip="@id/chip_all"
+        app:singleSelection="true">
 
-        <TextView
-            android:id="@+id/text_view_title"
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_all"
+            style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:text="TO DO LIST"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5" />
+            android:text="Tất Cả" />
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chip_group_filter"
-            android:layout_width="match_parent"
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_personal"
+            style="@style/Widget.MaterialComponents.Chip.Filter"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="16dp"
-            app:checkedChip="@id/chip_all"
-            app:singleSelection="true">
+            android:text="Riêng Tư" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_all"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Tất Cả" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_work"
+            style="@style/Widget.MaterialComponents.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Công Việc" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_personal"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Riêng Tư" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_work"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Công Việc" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_wishlist"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=" Yêu Thích" />
-        </com.google.android.material.chip.ChipGroup>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_wishlist"
+            style="@style/Widget.MaterialComponents.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" Yêu Thích" />
+    </com.google.android.material.chip.ChipGroup>
 
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view_tasks"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingTop="8dp"
-            android:paddingBottom="88dp"
-            tools:listitem="@layout/list_item_task" />
-    </LinearLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_tasks"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
+        android:paddingBottom="88dp"
+        tools:listitem="@layout/list_item_task" />
+</LinearLayout>
 
-    <!-- BottomAppBar -->
     <com.google.android.material.bottomappbar.BottomAppBar
         android:id="@+id/bottom_app_bar"
         style="@style/Widget.MaterialComponents.BottomAppBar.Colored"
@@ -82,13 +78,11 @@
         app:fabCradleVerticalOffset="10dp"
         app:hideOnScroll="true">
 
-        <!-- Dùng ConstraintLayout để chia đều hai bên FAB -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingHorizontal="24dp">
 
-            <!-- Nhóm trái -->
             <LinearLayout
                 android:id="@+id/group_left"
                 android:layout_width="wrap_content"
@@ -121,7 +115,6 @@
                     android:padding="20dp"/>
             </LinearLayout>
 
-            <!-- Nhóm phải -->
             <LinearLayout
                 android:id="@+id/group_right"
                 android:layout_width="wrap_content"
@@ -154,7 +147,6 @@
                     android:padding="20dp"/>
             </LinearLayout>
 
-            <!-- Đường guideline ở giữa (chính giữa FAB) -->
             <androidx.constraintlayout.widget.Guideline
                 android:id="@+id/guideline_center"
                 android:layout_width="wrap_content"
@@ -164,7 +156,6 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.bottomappbar.BottomAppBar>
 
-    <!-- Floating Action Button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add_task"
         android:layout_width="wrap_content"

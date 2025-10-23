@@ -1,10 +1,8 @@
-package com.example.btl.model;
-
+package com.example.btl.data.model; // <-- Package đã thay đổi
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-// Model: Lớp Entity đại diện cho một công việc trong cơ sở dữ liệu
 @Entity(tableName = "tasks")
 public class Task {
 
@@ -39,9 +37,7 @@ public class Task {
     // Setters
     public void setId(int id) { this.id = id; }
     public void setDueDate(long dueDate) { this.dueDate = dueDate; }
-    public void setCompleted(boolean completed) {
+    public void setCompleted(boolean completed) { // <-- Sử dụng hàm này
         isCompleted = completed;
     }
-
-
 }

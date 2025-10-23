@@ -1,4 +1,4 @@
-package com.example.btl.controller;
+package com.example.btl.receiver; // <-- Package đã thay đổi
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -20,11 +20,10 @@ public class NotificationReceiver extends BroadcastReceiver {
         String taskNotes = intent.getStringExtra("TASK_NOTES");
         int notificationId = intent.getIntExtra("TASK_ID", 0);
 
-        // Tạo Notification Channel (cần cho Android 8.0 trở lên)
         createNotificationChannel(context);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notifications) // Icon thông báo
+                .setSmallIcon(R.drawable.ic_notifications)
                 .setContentTitle("Task Reminder: " + taskTitle)
                 .setContentText(taskNotes)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -32,7 +31,6 @@ public class NotificationReceiver extends BroadcastReceiver {
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
 
-        // Kiểm tra quyền trước khi hiển thị
         if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
             notificationManager.notify(notificationId, builder.build());
         }

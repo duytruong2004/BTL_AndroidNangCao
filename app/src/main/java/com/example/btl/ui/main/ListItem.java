@@ -1,4 +1,4 @@
-package com.example.btl.controller; // Hoặc package bạn muốn
+package com.example.btl.ui.main; // <-- Package đã thay đổi
 
 public interface ListItem {
     int TYPE_HEADER = 0;

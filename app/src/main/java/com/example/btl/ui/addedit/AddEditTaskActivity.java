@@ -1,11 +1,11 @@
-package com.example.btl.controller;
+package com.example.btl.ui.addedit; // <-- Package đã thay đổi
 
-import android.app.AlarmManager;
+import android.Manifest;
 import android.app.DatePickerDialog;
-import android.app.PendingIntent;
 import android.app.TimePickerDialog;
-import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -14,14 +14,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import com.example.btl.R;
-import com.example.btl.model.Task;
-import com.example.btl.model.TaskViewModel;
+import com.example.btl.data.model.Task; // <-- Import đã thay đổi
+import com.example.btl.ui.viewmodel.TaskViewModel; // <-- Import đã thay đổi
+import com.example.btl.util.AlarmScheduler; // <-- Import mới
+
 import java.text.DateFormat;
 import java.util.Calendar;
 
-public class EditTaskActivity extends AppCompatActivity {
+public class AddEditTaskActivity extends AppCompatActivity {
 
     public static final String EXTRA_ID = "com.example.btl.EXTRA_ID";
     public static final String EXTRA_TITLE = "com.example.btl.EXTRA_TITLE";
@@ -36,65 +40,74 @@ public class EditTaskActivity extends AppCompatActivity {
     private RadioGroup radioGroupPriority;
     private RadioGroup radioGroupCategory;
     private TextView textViewDueDate;
-    private TextView textViewDueTime; // Thêm TextView cho giờ
+    private TextView textViewDueTime;
+    private Button buttonSave;
+    private Toolbar toolbar;
+
     private TaskViewModel taskViewModel;
     private Calendar selectedDate = Calendar.getInstance();
     private int currentTaskId = -1;
     private boolean currentTaskIsCompleted = false;
-    private long originalDueDateMillis = -1; // Lưu lại due date gốc để hủy thông báo
+    private long originalDueDateMillis = -1;
+
+    private static final int NOTIFICATION_PERMISSION_CODE = 101;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_edit_task);
+        setContentView(R.layout.activity_add_edit_task); // <-- Dùng layout gộp
 
         editTextTitle = findViewById(R.id.edit_text_task_title);
         editTextNotes = findViewById(R.id.edit_text_notes);
         radioGroupPriority = findViewById(R.id.radio_group_priority);
         radioGroupCategory = findViewById(R.id.radio_group_category);
         textViewDueDate = findViewById(R.id.text_view_due_date);
-        textViewDueTime = findViewById(R.id.text_view_due_time); // Ánh xạ view
-        Button buttonSave = findViewById(R.id.button_save_task);
+        textViewDueTime = findViewById(R.id.text_view_due_time);
+        buttonSave = findViewById(R.id.button_save_task);
+        toolbar = findViewById(R.id.toolbar_add_task);
 
-        Toolbar toolbar = findViewById(R.id.toolbar_add_task);
         toolbar.setNavigationOnClickListener(v -> finish());
-
         taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
 
-        // Lấy dữ liệu và hiển thị
         Intent intent = getIntent();
         if (intent.hasExtra(EXTRA_ID)) {
+            // Chế độ Sửa
+            toolbar.setTitle("Sửa Nghiệm Vụ");
+            buttonSave.setText("CẬP NHẬT");
+
             currentTaskId = intent.getIntExtra(EXTRA_ID, -1);
             editTextTitle.setText(intent.getStringExtra(EXTRA_TITLE));
             editTextNotes.setText(intent.getStringExtra(EXTRA_NOTES));
             currentTaskIsCompleted = intent.getBooleanExtra(EXTRA_IS_COMPLETED, false);
 
-            // Set Priority
             int priority = intent.getIntExtra(EXTRA_PRIORITY, 2);
             if (priority == 1) radioGroupPriority.check(R.id.radio_priority_low);
             else if (priority == 3) radioGroupPriority.check(R.id.radio_priority_high);
             else radioGroupPriority.check(R.id.radio_priority_medium);
 
-            // Set Category
             String category = intent.getStringExtra(EXTRA_CATEGORY);
             if ("Work".equals(category)) radioGroupCategory.check(R.id.radio_category_work);
             else if ("Wishlist".equals(category)) radioGroupCategory.check(R.id.radio_category_wishlist);
             else radioGroupCategory.check(R.id.radio_category_personal);
 
-            // Set Due Date and Time
             originalDueDateMillis = intent.getLongExtra(EXTRA_DUE_DATE, -1);
             if (originalDueDateMillis != -1) {
                 selectedDate.setTimeInMillis(originalDueDateMillis);
                 updateDateAndTimeViews();
             }
+        } else {
+            // Chế độ Thêm
+            toolbar.setTitle("Thêm Nghiệm Vụ");
+            buttonSave.setText("LƯU NGHIỆM VỤ");
+            requestNotificationPermission(); // Chỉ xin quyền khi thêm mới
         }
 
         textViewDueDate.setOnClickListener(v -> showDatePickerDialog());
-        textViewDueTime.setOnClickListener(v -> showTimePickerDialog()); // Thêm sự kiện click
-        buttonSave.setOnClickListener(v -> updateTask());
+        textViewDueTime.setOnClickListener(v -> showTimePickerDialog());
+        buttonSave.setOnClickListener(v -> saveTask());
     }
 
-    private void updateTask() {
+    private void saveTask() {
         String title = editTextTitle.getText().toString().trim();
         String notes = editTextNotes.getText().toString().trim();
 
@@ -114,21 +127,27 @@ public class EditTaskActivity extends AppCompatActivity {
         else if (selectedCategoryId == R.id.radio_category_wishlist) category = "Wishlist";
 
         long newDueDate = selectedDate.getTimeInMillis();
-
         Task task = new Task(title, notes, priority, category, currentTaskIsCompleted, newDueDate);
-        task.setId(currentTaskId);
 
-        // --- CẬP NHẬT LOGIC THÔNG BÁO ---
-        if (originalDueDateMillis != -1) {
-            cancelNotification((int) originalDueDateMillis);
+        if (currentTaskId != -1) {
+            // Cập nhật Task
+            task.setId(currentTaskId);
+
+            // 1. Hủy thông báo cũ (nếu có)
+            if (originalDueDateMillis != -1) {
+                AlarmScheduler.cancelNotification(this, originalDueDateMillis); // <-- Dùng AlarmScheduler
+            }
+            // 2. Đặt lịch thông báo mới
+            AlarmScheduler.scheduleNotification(this, task); // <-- Dùng AlarmScheduler
+
+            taskViewModel.update(task);
+            Toast.makeText(this, "Task updated", Toast.LENGTH_SHORT).show();
+        } else {
+            // Thêm Task mới
+            AlarmScheduler.scheduleNotification(this, task); // <-- Dùng AlarmScheduler
+            taskViewModel.insert(task);
+            Toast.makeText(this, "Task saved", Toast.LENGTH_SHORT).show();
         }
-        // 2. Đặt lịch thông báo mới
-        scheduleNotification(task, newDueDate);
-        // --- KẾT THÚC CẬP NHẬT ---
-
-        taskViewModel.update(task);
-
-        Toast.makeText(this, "Task updated", Toast.LENGTH_SHORT).show();
         finish();
     }
 
@@ -171,42 +190,11 @@ public class EditTaskActivity extends AppCompatActivity {
         textViewDueTime.setText(formattedTime);
     }
 
-    private void scheduleNotification(Task task, long timeInMillis) {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(this, NotificationReceiver.class);
-        intent.putExtra("TASK_TITLE", task.getTitle());
-        intent.putExtra("TASK_NOTES", task.getNotes());
-        int notificationId = (int) timeInMillis;
-        intent.putExtra("TASK_ID", notificationId);
-
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this,
-                notificationId,
-                intent,
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
-        );
-
-        if (timeInMillis > System.currentTimeMillis() && alarmManager != null) {
-            try {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent);
-            } catch (SecurityException e) {
-                Toast.makeText(this, "Permission to set exact alarms is not granted.", Toast.LENGTH_LONG).show();
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_CODE);
             }
-        }
-    }
-
-    private void cancelNotification(int notificationId) {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(this, NotificationReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this,
-                notificationId,
-                intent,
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_NO_CREATE
-        );
-
-        if (pendingIntent != null && alarmManager != null) {
-            alarmManager.cancel(pendingIntent);
         }
     }
 }
