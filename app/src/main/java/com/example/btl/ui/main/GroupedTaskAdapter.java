@@ -1,4 +1,6 @@
-package com.example.btl.ui.main; // <-- Package đã thay đổi
+package com.example.btl.ui.main;
+
+import static com.example.btl.ui.main.ListItem.TYPE_HEADER;
 
 import android.content.Context;
 import android.graphics.Paint;
@@ -6,6 +8,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+// CẬP NHẬT: Thêm import này
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -16,7 +20,7 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.btl.R;
-import com.example.btl.data.model.Task; // <-- Import đã thay đổi
+import com.example.btl.data.model.Task;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -27,15 +31,14 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
     private final Context context;
     private OnTaskToggleListener toggleListener;
     private OnHeaderClickListener headerClickListener;
-
-    private static final int TYPE_HEADER = ListItem.TYPE_HEADER;
-    private static final int TYPE_TASK = ListItem.TYPE_TASK;
+    private OnTaskClickListener taskClickListener;
 
     public GroupedTaskAdapter(Context context) {
         super(DIFF_CALLBACK);
         this.context = context;
     }
 
+    // DiffUtil (Không đổi)
     private static final DiffUtil.ItemCallback<ListItem> DIFF_CALLBACK = new DiffUtil.ItemCallback<ListItem>() {
         @Override
         public boolean areItemsTheSame(@NonNull ListItem oldItem, @NonNull ListItem newItem) {
@@ -57,16 +60,17 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
                         oldTask.getPriority() == newTask.getPriority() &&
                         Objects.equals(oldTask.getCategory(), newTask.getCategory()) &&
                         oldTask.isCompleted() == newTask.isCompleted() &&
-                        oldTask.getDueDate() == newTask.getDueDate();
+                        oldTask.getDueDate() == newTask.getDueDate() &&
+                        Objects.equals(oldTask.getNotes(), newTask.getNotes());
             } else if (oldItem instanceof HeaderItem && newItem instanceof HeaderItem) {
                 return ((HeaderItem) oldItem).getTitle().equals(((HeaderItem) newItem).getTitle()) &&
-                        ((HeaderItem) oldItem).isExpanded() == ((HeaderItem) newItem).isExpanded(); // Kiểm tra cả isExpanded
+                        ((HeaderItem) oldItem).isExpanded() == ((HeaderItem) newItem).isExpanded();
             }
             return false;
         }
     };
 
-    // --- ViewHolder cho Header ---
+    // HeaderViewHolder (Không đổi)
     class HeaderViewHolder extends RecyclerView.ViewHolder {
         TextView headerTitle;
         ImageView expandArrow;
@@ -97,10 +101,12 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
         }
     }
 
-    // --- ViewHolder cho Task ---
+    // TaskViewHolder (CẬP NHẬT LISTENER)
     class TaskViewHolder extends RecyclerView.ViewHolder {
         TextView taskTitle; TextView subtaskInfo; ImageView priorityIcon;
         ImageView categoryIcon; TextView dueDate; CheckBox checkBoxCompleted;
+        ImageView notesIcon;
+
         TaskViewHolder(View itemView) {
             super(itemView);
             taskTitle = itemView.findViewById(R.id.text_view_task_title);
@@ -109,44 +115,84 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
             categoryIcon = itemView.findViewById(R.id.image_view_category);
             dueDate = itemView.findViewById(R.id.text_view_item_due_date);
             checkBoxCompleted = itemView.findViewById(R.id.checkbox_completed);
+            notesIcon = itemView.findViewById(R.id.image_view_notes);
 
-            checkBoxCompleted.setOnClickListener(v -> {
-                int position = getBindingAdapterPosition();
-                if (toggleListener != null && position != RecyclerView.NO_POSITION) {
+            // --- CẬP NHẬT: Thay đổi listener của CheckBox ---
+            // Xóa setOnClickListener cũ
+            // checkBoxCompleted.setOnClickListener(v -> { ... });
+
+            // Dùng setOnCheckedChangeListener để an toàn hơn
+            checkBoxCompleted.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    int position = getBindingAdapterPosition();
+
+                    // Kiểm tra xem listener có sẵn và vị trí hợp lệ
+                    if (toggleListener == null || position == RecyclerView.NO_POSITION) {
+                        return;
+                    }
+
                     ListItem item = getItem(position);
                     if (item instanceof TaskItem) {
-                        toggleListener.onTaskToggled(((TaskItem) item).getTask());
+                        Task task = ((TaskItem) item).getTask();
+
+                        // Rất quan trọng: Chỉ gọi update NẾU
+                        // trạng thái mới (isChecked) khác với trạng thái trong model (task.isCompleted())
+                        // Điều này ngăn vòng lặp vô tận khi hàm bind() gọi setChecked.
+                        if (task.isCompleted() != isChecked) {
+                            toggleListener.onTaskToggled(task);
+                        }
+                    }
+                }
+            });
+            // --- KẾT THÚC CẬP NHẬT ---
+
+            // Listener click vào item (Không đổi)
+            itemView.setOnClickListener(v -> {
+                int position = getBindingAdapterPosition();
+                if (taskClickListener != null && position != RecyclerView.NO_POSITION) {
+                    ListItem item = getItem(position);
+                    if (item instanceof TaskItem) {
+                        taskClickListener.onTaskClick(((TaskItem) item).getTask());
                     }
                 }
             });
         }
+
         void bind(TaskItem taskItem) {
             Task currentTask = taskItem.getTask();
             taskTitle.setText(currentTask.getTitle());
+
             if (currentTask.getDueDate() > 0) {
                 String formattedDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(new Date(currentTask.getDueDate()));
                 dueDate.setText(formattedDate); dueDate.setVisibility(View.VISIBLE);
             } else { dueDate.setVisibility(View.GONE); }
 
+            // CẬP NHẬT: Dòng này giờ sẽ an toàn vì listener đã có "guard" (bảo vệ)
             checkBoxCompleted.setChecked(currentTask.isCompleted());
 
+            // Logic if/else (Không đổi)
             if (currentTask.isCompleted()) {
                 taskTitle.setPaintFlags(taskTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                subtaskInfo.setText("1/1"); itemView.setAlpha(0.5f);
+                subtaskInfo.setText("1/1");
+                itemView.setAlpha(0.5f);
             } else {
                 taskTitle.setPaintFlags(taskTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
-                subtaskInfo.setText("0/1"); itemView.setAlpha(1.0f);
+                subtaskInfo.setText("0/1");
+                itemView.setAlpha(1.0f);
             }
 
+            // Logic priority (Không đổi)
             priorityIcon.setVisibility(View.VISIBLE);
+            priorityIcon.setImageResource(R.drawable.ic_flag);
             switch (currentTask.getPriority()) {
-                // Đã sửa: 1=Low, 2=Medium, 3=High (theo code AddEdit)
                 case 1: priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_low)); break;
                 case 2: priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_medium)); break;
                 case 3: priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_high)); break;
                 default: priorityIcon.setVisibility(View.INVISIBLE); break;
             }
 
+            // Logic category (Không đổi)
             if (currentTask.getCategory() != null && !currentTask.getCategory().isEmpty()) {
                 categoryIcon.setVisibility(View.VISIBLE);
                 switch (currentTask.getCategory()) {
@@ -156,10 +202,18 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
                     default: categoryIcon.setVisibility(View.INVISIBLE); break;
                 }
             } else { categoryIcon.setVisibility(View.INVISIBLE); }
+
+            // Logic notes (Không đổi)
+            String notes = currentTask.getNotes();
+            if (notes != null && !notes.trim().isEmpty()) {
+                notesIcon.setVisibility(View.VISIBLE);
+            } else {
+                notesIcon.setVisibility(View.GONE);
+            }
         }
     }
 
-    // --- Các hàm Adapter cơ bản ---
+    // --- Các hàm còn lại (Không đổi) ---
     @Override public int getItemViewType(int position) { return getItem(position).getItemType(); }
 
     @NonNull @Override public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -179,7 +233,6 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
         else if (holder instanceof TaskViewHolder) { ((TaskViewHolder) holder).bind((TaskItem) item); }
     }
 
-    // --- Các hàm tiện ích và Listener ---
     public Task getTaskObjectAt(int position) {
         ListItem item = getItem(position);
         if (item instanceof TaskItem) { return ((TaskItem) item).getTask(); }
@@ -191,4 +244,11 @@ public class GroupedTaskAdapter extends ListAdapter<ListItem, RecyclerView.ViewH
 
     public interface OnHeaderClickListener { void onHeaderClick(HeaderItem headerItem, int position); }
     public void setOnHeaderClickListener(OnHeaderClickListener listener) { this.headerClickListener = listener; }
+
+    public interface OnTaskClickListener {
+        void onTaskClick(Task task);
+    }
+    public void setOnTaskClickListener(OnTaskClickListener listener) {
+        this.taskClickListener = listener;
+    }
 }
