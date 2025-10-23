@@ -6,6 +6,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+// THÊM IMPORT NÀY
+import android.text.TextUtils;
+
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -22,12 +25,27 @@ public class NotificationReceiver extends BroadcastReceiver {
 
         createNotificationChannel(context);
 
+        // --- CẬP NHẬT PHẦN TẠO NỘI DUNG THÔNG BÁO ---
+        String contentTitle = "Nhắc nhở: " + taskTitle; // Giữ nguyên tiêu đề là tên Task
+        String contentText = taskNotes; // Nội dung chính là ghi chú
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notifications)
-                .setContentTitle("Task Reminder: " + taskTitle)
-                .setContentText(taskNotes)
+                .setContentTitle(contentTitle) // Tiêu đề là tên Task
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true);
+                .setAutoCancel(true); // Tự động hủy khi nhấn vào
+
+        // Kiểm tra xem có ghi chú không
+        if (!TextUtils.isEmpty(contentText)) {
+            // Nếu có ghi chú, đặt nó làm nội dung chính và cho phép mở rộng
+            builder.setContentText(contentText);
+            // Sử dụng BigTextStyle để hiển thị đầy đủ ghi chú dài
+            builder.setStyle(new NotificationCompat.BigTextStyle().bigText(contentText));
+        } else {
+            // Nếu không có ghi chú, có thể để trống hoặc hiển thị một thông điệp mặc định
+            builder.setContentText("Đã đến giờ thực hiện!"); // Ví dụ
+        }
+        // --- KẾT THÚC CẬP NHẬT ---
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
 
@@ -36,6 +54,7 @@ public class NotificationReceiver extends BroadcastReceiver {
         }
     }
 
+    // Hàm createNotificationChannel (Không đổi)
     private void createNotificationChannel(Context context) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             CharSequence name = "Task Reminder Channel";

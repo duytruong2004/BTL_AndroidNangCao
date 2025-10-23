@@ -6,7 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
-import android.widget.CompoundButton; // Quan trọng: import này cần có
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -35,11 +35,13 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
     private static final DiffUtil.ItemCallback<Task> DIFF_CALLBACK = new DiffUtil.ItemCallback<Task>() {
         @Override
         public boolean areItemsTheSame(@NonNull Task oldItem, @NonNull Task newItem) {
+            // ... (Giữ nguyên)
             return oldItem.getId() == newItem.getId();
         }
 
         @Override
         public boolean areContentsTheSame(@NonNull Task oldItem, @NonNull Task newItem) {
+            // ... (Giữ nguyên)
             return oldItem.getTitle().equals(newItem.getTitle()) &&
                     oldItem.getPriority() == newItem.getPriority() &&
                     Objects.equals(oldItem.getCategory(), newItem.getCategory()) &&
@@ -51,6 +53,7 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
     @NonNull
     @Override
     public TaskViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        // ... (Giữ nguyên)
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.list_item_task, parent, false);
         return new TaskViewHolder(itemView);
@@ -71,7 +74,7 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
                 holder.dueDate.setVisibility(View.GONE);
             }
 
-            // Logic Checkbox (Đã sửa ở lần trước, giờ an toàn)
+            // Logic Checkbox (Không đổi)
             holder.checkBoxCompleted.setChecked(currentTask.isCompleted());
 
             // Logic text 0/1 | 1/1 (Không đổi)
@@ -85,21 +88,30 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
                 holder.itemView.setAlpha(1.0f);
             }
 
-            // --- CẬP NHẬT PHẦN PRIORITY ICON ---
-            holder.priorityIcon.setVisibility(View.VISIBLE);
-            // THÊM DÒNG NÀY ĐỂ SỬA LỖI ICON CHỒNG CHÉO:
-            holder.priorityIcon.setImageResource(R.drawable.ic_flag);
+            // --- CẬP NHẬT: Luôn reset icon priority ---
+            holder.priorityIcon.setImageResource(R.drawable.ic_flag); // Luôn đặt lại icon gốc
+            holder.priorityIcon.clearColorFilter(); // Luôn xóa bộ lọc màu cũ
 
-            // Sau đó mới set màu
             switch (currentTask.getPriority()) {
-                case 1: holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_low)); break;
-                case 2: holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_medium)); break;
-                case 3: holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_high)); break;
+                case 1:
+                    holder.priorityIcon.setVisibility(View.VISIBLE); // Đảm bảo hiện
+                    holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_low));
+                    break;
+                case 2:
+                    holder.priorityIcon.setVisibility(View.VISIBLE); // Đảm bảo hiện
+                    holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_medium));
+                    break;
+                case 3:
+                    holder.priorityIcon.setVisibility(View.VISIBLE); // Đảm bảo hiện
+                    holder.priorityIcon.setColorFilter(ContextCompat.getColor(context, R.color.priority_high));
+                    break;
                 default:
-                    holder.priorityIcon.setVisibility(View.INVISIBLE);
+                    // Ngay cả khi không có priority, vẫn reset icon và ẩn đi
+                    holder.priorityIcon.setVisibility(View.INVISIBLE); // Ẩn đi
                     break;
             }
             // --- KẾT THÚC CẬP NHẬT ---
+
 
             // Logic category (Không đổi)
             if (currentTask.getCategory() != null && !currentTask.getCategory().isEmpty()) {
@@ -115,31 +127,32 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
                         break;
                     case "Wishlist":
                         holder.categoryIcon.setImageResource(R.drawable.ic_wishlist);
-                        holder.categoryIcon.setColorFilter(ContextCompat.getColor(context, R.color.purple_500));
+                        holder.categoryIcon.setColorFilter(ContextCompat.getColor(context, R.color.purple_500)); // Hoặc category_wishlist
                         break;
                     default:
                         holder.categoryIcon.setVisibility(View.INVISIBLE);
                         break;
                 }
-            } else {
-                holder.categoryIcon.setVisibility(View.INVISIBLE);
-            }
+            } else { holder.categoryIcon.setVisibility(View.INVISIBLE); } // Đảm bảo ẩn
 
             // Logic notes icon (Không đổi)
             String notes = currentTask.getNotes();
             if (notes != null && !notes.trim().isEmpty()) {
                 holder.notesIcon.setVisibility(View.VISIBLE);
+                holder.notesIcon.setImageResource(R.drawable.ic_menu); // Đảm bảo đúng icon
             } else {
-                holder.notesIcon.setVisibility(View.GONE);
+                holder.notesIcon.setVisibility(View.GONE); // Đảm bảo ẩn
             }
         }
     }
     public Task getTaskAt(int position) {
+        // ... (Giữ nguyên)
         return getItem(position);
     }
 
-    // ViewHolder (Đã sửa listener ở lần trước)
+    // ViewHolder (Đã sửa listener checkbox)
     class TaskViewHolder extends RecyclerView.ViewHolder {
+        // ... (Khai báo biến view không đổi)
         private final TextView taskTitle;
         private final TextView subtaskInfo;
         private final ImageView priorityIcon;
@@ -148,8 +161,10 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
         private final CheckBox checkBoxCompleted;
         private final ImageView notesIcon;
 
+
         private TaskViewHolder(View itemView) {
             super(itemView);
+            // ... (findViewById không đổi)
             taskTitle = itemView.findViewById(R.id.text_view_task_title);
             subtaskInfo = itemView.findViewById(R.id.text_view_subtask_info);
             priorityIcon = itemView.findViewById(R.id.image_view_priority);
@@ -158,19 +173,15 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
             checkBoxCompleted = itemView.findViewById(R.id.checkbox_completed);
             notesIcon = itemView.findViewById(R.id.image_view_notes);
 
-            // Dùng setOnCheckedChangeListener (Đã sửa ở lần trước)
+            // Listener Checkbox (Không đổi)
             checkBoxCompleted.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     int position = getAdapterPosition();
-
                     if (toggleListener == null || position == RecyclerView.NO_POSITION) {
                         return;
                     }
-
                     Task task = getItem(position);
-
-                    // Guard (bảo vệ)
                     if (task != null && task.isCompleted() != isChecked) {
                         toggleListener.onTaskToggled(task);
                     }
