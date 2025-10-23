@@ -39,6 +39,9 @@ public class Task {
     // Setters
     public void setId(int id) { this.id = id; }
     public void setDueDate(long dueDate) { this.dueDate = dueDate; }
+    public void setCompleted(boolean completed) {
+        isCompleted = completed;
+    }
 
 
 }

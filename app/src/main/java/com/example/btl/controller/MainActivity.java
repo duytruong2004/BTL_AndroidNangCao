@@ -23,7 +23,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import it.xabaras.android.recyclerview.swipedecorator.RecyclerViewSwipeDecorator;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TaskAdapter.OnTaskToggleListener {
 
     private TaskViewModel taskViewModel;
     private TaskAdapter adapter;
@@ -45,6 +45,9 @@ public class MainActivity extends AppCompatActivity {
 
         adapter = new TaskAdapter(this);
         recyclerView.setAdapter(adapter);
+
+        // Thiết lập listener cho adapter
+        adapter.setOnTaskToggleListener(this);
 
         // --- ViewModel ---
         taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
@@ -82,13 +85,13 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Menu Clicked", Toast.LENGTH_SHORT).show());
 
         btnCalendar.setOnClickListener(v -> {
-            // Thay thế Toast bằng Intent
             Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
             startActivity(intent);
         });
         btnNotifications.setOnClickListener(v ->
                 Toast.makeText(this, "Notifications Clicked", Toast.LENGTH_SHORT).show());
 
+        // --- ItemTouchHelper (Vuốt để Xóa/Sửa) ---
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,
                 ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
@@ -102,23 +105,17 @@ public class MainActivity extends AppCompatActivity {
                 Task task = adapter.getTaskAt(position);
 
                 if (direction == ItemTouchHelper.LEFT) { // Vuốt sang trái để hỏi XÓA
-
-                    // Hiện hộp thoại xác nhận
                     new AlertDialog.Builder(MainActivity.this)
                             .setTitle("Xác nhận xóa")
                             .setMessage("Bạn có chắc chắn muốn xóa công việc \"" + task.getTitle() + "\"?")
                             .setPositiveButton("Xóa", (dialog, which) -> {
-                                // Nếu người dùng đồng ý, thì mới thực hiện xóa
                                 taskViewModel.delete(task);
                                 Toast.makeText(MainActivity.this, "Đã xóa công việc", Toast.LENGTH_SHORT).show();
                             })
                             .setNegativeButton("Hủy", (dialog, which) -> {
-                                // Nếu người dùng hủy, ta cần báo cho adapter vẽ lại item
-                                // để nó quay về trạng thái ban đầu.
                                 adapter.notifyItemChanged(viewHolder.getAdapterPosition());
                             })
                             .setOnCancelListener(dialog -> {
-                                // Tương tự, nếu người dùng bấm ra ngoài để tắt dialog
                                 adapter.notifyItemChanged(viewHolder.getAdapterPosition());
                             })
                             .create()
@@ -126,7 +123,6 @@ public class MainActivity extends AppCompatActivity {
 
                 } else { // Vuốt sang phải để SỬA
                     Intent intent = new Intent(MainActivity.this, EditTaskActivity.class);
-                    // Truyền toàn bộ dữ liệu của task qua intent
                     intent.putExtra(EditTaskActivity.EXTRA_ID, task.getId());
                     intent.putExtra(EditTaskActivity.EXTRA_TITLE, task.getTitle());
                     intent.putExtra(EditTaskActivity.EXTRA_NOTES, task.getNotes());
@@ -136,14 +132,12 @@ public class MainActivity extends AppCompatActivity {
                     intent.putExtra(EditTaskActivity.EXTRA_IS_COMPLETED, task.isCompleted());
                     startActivity(intent);
 
-                    // Vẽ lại item để nó không bị kẹt ở trạng thái vuốt
                     adapter.notifyItemChanged(position);
                 }
             }
 
             @Override
             public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
-                // Phần này giữ nguyên, không thay đổi
                 new RecyclerViewSwipeDecorator.Builder(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
                         .addSwipeLeftBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.priority_high))
                         .addSwipeLeftActionIcon(R.drawable.ic_delete)
@@ -159,5 +153,31 @@ public class MainActivity extends AppCompatActivity {
                 super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
             }
         }).attachToRecyclerView(recyclerView);
+    }
+
+    // --- PHƯƠNG THỨC ĐÃ SỬA LỖI ---
+    @Override
+    public void onTaskToggled(Task task) {
+        // 1. Lấy trạng thái mới
+        boolean newCompletedState = !task.isCompleted();
+
+        // 2. Tạo một đối tượng Task MỚI HOÀN TOÀN
+        //    Sử dụng constructor gốc từ tệp Task.java
+        Task taskToUpdate = new Task(
+                task.getTitle(),
+                task.getNotes(),
+                task.getPriority(),
+                task.getCategory(),
+                newCompletedState, // Đặt trạng thái mới
+                task.getDueDate()
+        );
+
+        // 3. Đặt ID cho task mới để Room biết update task nào
+        taskToUpdate.setId(task.getId());
+
+        // 4. Gửi task MỚI đi
+        //    Bằng cách này, task cũ trong adapter không bị thay đổi,
+        //    giúp DiffUtil phát hiện sự khác biệt và cập nhật UI.
+        taskViewModel.update(taskToUpdate);
     }
 }

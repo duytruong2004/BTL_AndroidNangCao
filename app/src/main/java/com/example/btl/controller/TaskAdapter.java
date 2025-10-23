@@ -1,9 +1,11 @@
 package com.example.btl.controller;
 
 import android.content.Context;
+import android.graphics.Paint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -17,18 +19,17 @@ import com.example.btl.model.Task;
 import java.util.Objects;
 import java.text.DateFormat;
 import java.util.Date;
-// Nâng cấp lên ListAdapter để tương thích với ViewModel và LiveData
+
 public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
 
     private final Context context;
+    private OnTaskToggleListener toggleListener;
 
     public TaskAdapter(Context context) {
         super(DIFF_CALLBACK);
         this.context = context;
     }
 
-    // DiffUtil giúp RecyclerView nhận biết item nào đã thay đổi, thêm, hoặc xóa
-    // một cách hiệu quả.
     private static final DiffUtil.ItemCallback<Task> DIFF_CALLBACK = new DiffUtil.ItemCallback<Task>() {
         @Override
         public boolean areItemsTheSame(@NonNull Task oldItem, @NonNull Task newItem) {
@@ -39,7 +40,8 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
         public boolean areContentsTheSame(@NonNull Task oldItem, @NonNull Task newItem) {
             return oldItem.getTitle().equals(newItem.getTitle()) &&
                     oldItem.getPriority() == newItem.getPriority() &&
-                    Objects.equals(oldItem.getCategory(), newItem.getCategory());
+                    Objects.equals(oldItem.getCategory(), newItem.getCategory()) &&
+                    oldItem.isCompleted() == newItem.isCompleted();
         }
     };
 
@@ -53,18 +55,39 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull TaskViewHolder holder, int position) {
-        // Sử dụng getItem(position) thay vì truy cập trực tiếp vào danh sách
         Task currentTask = getItem(position);
         if (currentTask != null) {
             holder.taskTitle.setText(currentTask.getTitle());
-            holder.subtaskInfo.setText("0/1");
+
+            // Cập nhật ngày
             if (currentTask.getDueDate() > 0) {
                 String formattedDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(new Date(currentTask.getDueDate()));
                 holder.dueDate.setText(formattedDate);
                 holder.dueDate.setVisibility(View.VISIBLE);
             } else {
                 holder.dueDate.setVisibility(View.GONE);
-            }// Placeholder for subtask info
+            }
+
+            // --- PHẦN CẬP NHẬT GIAO DIỆN HOÀN THÀNH ---
+            holder.checkBoxCompleted.setChecked(currentTask.isCompleted());
+
+            if (currentTask.isCompleted()) {
+                // Thêm gạch ngang
+                holder.taskTitle.setPaintFlags(holder.taskTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+                // Cập nhật text "1/1"
+                holder.subtaskInfo.setText("1/1");
+                // Làm mờ toàn bộ item
+                holder.itemView.setAlpha(0.5f);
+            } else {
+                // Xóa gạch ngang
+                holder.taskTitle.setPaintFlags(holder.taskTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+                // Cập nhật text "0/1"
+                holder.subtaskInfo.setText("0/1");
+                // Hiển thị rõ item
+                holder.itemView.setAlpha(1.0f);
+            }
+            // --- KẾT THÚC CẬP NHẬT ---
+
 
             holder.priorityIcon.setVisibility(View.VISIBLE);
             switch (currentTask.getPriority()) {
@@ -95,7 +118,7 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
                         break;
                     case "Wishlist":
                         holder.categoryIcon.setImageResource(R.drawable.ic_wishlist);
-                        holder.categoryIcon.setColorFilter(ContextCompat.getColor(context, R.color.category_wishlist));
+                        holder.categoryIcon.setColorFilter(ContextCompat.getColor(context, R.color.purple_500));
                         break;
                     default:
                         holder.categoryIcon.setVisibility(View.INVISIBLE);
@@ -110,13 +133,14 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
         return getItem(position);
     }
 
-    // ViewHolder giữ nguyên
-    static class TaskViewHolder extends RecyclerView.ViewHolder {
+    // ViewHolder
+    class TaskViewHolder extends RecyclerView.ViewHolder {
         private final TextView taskTitle;
         private final TextView subtaskInfo;
         private final ImageView priorityIcon;
         private final ImageView categoryIcon;
         private final TextView dueDate;
+        private final CheckBox checkBoxCompleted;
 
         private TaskViewHolder(View itemView) {
             super(itemView);
@@ -125,7 +149,25 @@ public class TaskAdapter extends ListAdapter<Task, TaskAdapter.TaskViewHolder> {
             priorityIcon = itemView.findViewById(R.id.image_view_priority);
             categoryIcon = itemView.findViewById(R.id.image_view_category);
             dueDate = itemView.findViewById(R.id.text_view_item_due_date);
+            checkBoxCompleted = itemView.findViewById(R.id.checkbox_completed);
+
+            // Thiết lập listener
+            checkBoxCompleted.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (toggleListener != null && position != RecyclerView.NO_POSITION) {
+                    Task task = getItem(position);
+                    toggleListener.onTaskToggled(task);
+                }
+            });
         }
     }
-}
 
+    // Interface và Setter (giữ nguyên)
+    public interface OnTaskToggleListener {
+        void onTaskToggled(Task task);
+    }
+
+    public void setOnTaskToggleListener(OnTaskToggleListener listener) {
+        this.toggleListener = listener;
+    }
+}

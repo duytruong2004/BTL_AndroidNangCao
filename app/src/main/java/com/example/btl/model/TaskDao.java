@@ -25,11 +25,16 @@ public interface TaskDao {
     @Query("DELETE FROM tasks")
     void deleteAllTasks();
 
-    @Query("SELECT * FROM tasks ORDER BY priority DESC")
+    // SỬA ĐỔI QUERY: Sắp xếp theo isCompleted (ASC - false lên trước)
+    // rồi mới đến priority
+    @Query("SELECT * FROM tasks ORDER BY isCompleted ASC, priority DESC")
     LiveData<List<Task>> getAllTasks();
 
-    @Query("SELECT * FROM tasks WHERE category = :category ORDER BY priority DESC")
+    // SỬA ĐỔI QUERY: Tương tự, sắp xếp theo isCompleted trước
+    @Query("SELECT * FROM tasks WHERE category = :category ORDER BY isCompleted ASC, priority DESC")
     LiveData<List<Task>> getTasksByCategory(String category);
-    @Query("SELECT * FROM tasks WHERE dueDate >= :startOfDay AND dueDate < :endOfDay ORDER BY priority DESC")
+
+    // SỬA ĐỔI QUERY: Tương tự, sắp xếp theo isCompleted trước
+    @Query("SELECT * FROM tasks WHERE dueDate >= :startOfDay AND dueDate < :endOfDay ORDER BY isCompleted ASC, priority DESC")
     LiveData<List<Task>> getTasksForDate(long startOfDay, long endOfDay);
 }

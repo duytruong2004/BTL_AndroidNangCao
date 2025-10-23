@@ -119,7 +119,6 @@ public class EditTaskActivity extends AppCompatActivity {
         task.setId(currentTaskId);
 
         // --- CẬP NHẬT LOGIC THÔNG BÁO ---
-        // 1. Hủy thông báo cũ
         if (originalDueDateMillis != -1) {
             cancelNotification((int) originalDueDateMillis);
         }
@@ -132,7 +131,7 @@ public class EditTaskActivity extends AppCompatActivity {
         Toast.makeText(this, "Task updated", Toast.LENGTH_SHORT).show();
         finish();
     }
-c
+
     private void showDatePickerDialog() {
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 this,
