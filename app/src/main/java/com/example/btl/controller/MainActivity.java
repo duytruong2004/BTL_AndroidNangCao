@@ -10,6 +10,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+// Thêm import cho Observer và LiveData
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,12 +24,20 @@ import com.google.android.material.bottomappbar.BottomAppBar;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+// Thêm import cho List
+import java.util.List;
+
 import it.xabaras.android.recyclerview.swipedecorator.RecyclerViewSwipeDecorator;
 
 public class MainActivity extends AppCompatActivity implements TaskAdapter.OnTaskToggleListener {
 
     private TaskViewModel taskViewModel;
     private TaskAdapter adapter;
+    // Biến để lưu trữ LiveData đang được theo dõi
+    private LiveData<List<Task>> currentLiveData = null;
+    // Biến để lưu trữ Observer hiện tại
+    private Observer<List<Task>> taskObserver = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,13 +56,19 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.OnTas
 
         adapter = new TaskAdapter(this);
         recyclerView.setAdapter(adapter);
-
-        // Thiết lập listener cho adapter
         adapter.setOnTaskToggleListener(this);
 
         // --- ViewModel ---
         taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
-        taskViewModel.getAllTasks().observe(this, adapter::submitList);
+
+        // --- Khởi tạo Observer ---
+        // Observer này sẽ được dùng lại cho tất cả các LiveData
+        taskObserver = new Observer<List<Task>>() {
+            @Override
+            public void onChanged(List<Task> tasks) {
+                adapter.submitList(tasks);
+            }
+        };
 
         // --- FAB thêm mới ---
         fabAddTask.setOnClickListener(v -> {
@@ -59,20 +76,35 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.OnTas
             startActivity(intent);
         });
 
-        // --- ChipGroup lọc dữ liệu ---
+        // --- ChipGroup lọc dữ liệu (ĐÃ SỬA LỖI) ---
         chipGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            // 1. Xóa observer cũ nếu có
+            removeObserver();
+
+            // 2. Lấy LiveData mới dựa trên chip được chọn
             if (checkedId == R.id.chip_all) {
-                taskViewModel.getAllTasks().observe(this, adapter::submitList);
+                currentLiveData = taskViewModel.getAllTasks();
             } else if (checkedId == R.id.chip_personal) {
-                taskViewModel.getTasksByCategory("Personal").observe(this, adapter::submitList);
+                currentLiveData = taskViewModel.getTasksByCategory("Personal");
             } else if (checkedId == R.id.chip_work) {
-                taskViewModel.getTasksByCategory("Work").observe(this, adapter::submitList);
+                currentLiveData = taskViewModel.getTasksByCategory("Work");
             } else if (checkedId == R.id.chip_wishlist) {
-                taskViewModel.getTasksByCategory("Wishlist").observe(this, adapter::submitList);
+                currentLiveData = taskViewModel.getTasksByCategory("Wishlist");
+            }
+
+            // 3. Thêm observer mới vào LiveData mới
+            if (currentLiveData != null) {
+                currentLiveData.observe(this, taskObserver);
             }
         });
 
+        // --- Hiển thị danh sách ban đầu ("Tất Cả") ---
+        currentLiveData = taskViewModel.getAllTasks();
+        currentLiveData.observe(this, taskObserver);
+
+
         // --- Các nút trong BottomAppBar ---
+        // (Giữ nguyên code xử lý các nút này)
         ImageButton btnList = findViewById(R.id.btn_list);
         ImageButton btnMenu = findViewById(R.id.btn_menu);
         ImageButton btnCalendar = findViewById(R.id.btn_calendar);
@@ -80,10 +112,8 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.OnTas
 
         btnList.setOnClickListener(v ->
                 Toast.makeText(this, "List Clicked", Toast.LENGTH_SHORT).show());
-
         btnMenu.setOnClickListener(v ->
                 Toast.makeText(this, "Menu Clicked", Toast.LENGTH_SHORT).show());
-
         btnCalendar.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
             startActivity(intent);
@@ -91,9 +121,12 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.OnTas
         btnNotifications.setOnClickListener(v ->
                 Toast.makeText(this, "Notifications Clicked", Toast.LENGTH_SHORT).show());
 
+
         // --- ItemTouchHelper (Vuốt để Xóa/Sửa) ---
+        // (Giữ nguyên code xử lý vuốt)
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,
                 ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            // ... (code onMove, onSwiped, onChildDraw giữ nguyên)
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
                 return false;
@@ -155,29 +188,34 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.OnTas
         }).attachToRecyclerView(recyclerView);
     }
 
-    // --- PHƯƠNG THỨC ĐÃ SỬA LỖI ---
+    // --- Phương thức xử lý toggle checkbox ---
+    // (Giữ nguyên code này)
     @Override
     public void onTaskToggled(Task task) {
-        // 1. Lấy trạng thái mới
         boolean newCompletedState = !task.isCompleted();
-
-        // 2. Tạo một đối tượng Task MỚI HOÀN TOÀN
-        //    Sử dụng constructor gốc từ tệp Task.java
         Task taskToUpdate = new Task(
                 task.getTitle(),
                 task.getNotes(),
                 task.getPriority(),
                 task.getCategory(),
-                newCompletedState, // Đặt trạng thái mới
+                newCompletedState,
                 task.getDueDate()
         );
-
-        // 3. Đặt ID cho task mới để Room biết update task nào
         taskToUpdate.setId(task.getId());
-
-        // 4. Gửi task MỚI đi
-        //    Bằng cách này, task cũ trong adapter không bị thay đổi,
-        //    giúp DiffUtil phát hiện sự khác biệt và cập nhật UI.
         taskViewModel.update(taskToUpdate);
+    }
+
+    // --- Phương thức helper để xóa observer cũ ---
+    private void removeObserver() {
+        if (currentLiveData != null && taskObserver != null) {
+            currentLiveData.removeObserver(taskObserver);
+        }
+    }
+
+    // --- Ghi đè onDestroy để đảm bảo observer được xóa khi Activity bị hủy ---
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        removeObserver(); // Xóa observer khi activity bị hủy
     }
 }
