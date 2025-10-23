@@ -10,7 +10,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-// Thêm import cho Observer và LiveData
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -24,109 +23,91 @@ import com.google.android.material.bottomappbar.BottomAppBar;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-// Thêm import cho List
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import it.xabaras.android.recyclerview.swipedecorator.RecyclerViewSwipeDecorator;
 
-public class MainActivity extends AppCompatActivity implements TaskAdapter.OnTaskToggleListener {
+public class MainActivity extends AppCompatActivity
+        implements GroupedTaskAdapter.OnTaskToggleListener, GroupedTaskAdapter.OnHeaderClickListener {
 
     private TaskViewModel taskViewModel;
-    private TaskAdapter adapter;
-    // Biến để lưu trữ LiveData đang được theo dõi
+    private GroupedTaskAdapter adapter; // Sử dụng adapter mới
     private LiveData<List<Task>> currentLiveData = null;
-    // Biến để lưu trữ Observer hiện tại
     private Observer<List<Task>> taskObserver = null;
-
+    private Map<String, Boolean> headerExpansionState = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // --- Ánh xạ view ---
         RecyclerView recyclerView = findViewById(R.id.recycler_view_tasks);
         FloatingActionButton fabAddTask = findViewById(R.id.fab_add_task);
         ChipGroup chipGroup = findViewById(R.id.chip_group_filter);
         BottomAppBar bottomAppBar = findViewById(R.id.bottom_app_bar);
 
-        // --- Cấu hình RecyclerView ---
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setItemAnimator(null); // Tắt animation mặc định
         recyclerView.setHasFixedSize(true);
 
-        adapter = new TaskAdapter(this);
+        adapter = new GroupedTaskAdapter(this); // Khởi tạo adapter mới
         recyclerView.setAdapter(adapter);
         adapter.setOnTaskToggleListener(this);
+        adapter.setOnHeaderClickListener(this); // Set listener header
 
-        // --- ViewModel ---
         taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
 
-        // --- Khởi tạo Observer ---
-        // Observer này sẽ được dùng lại cho tất cả các LiveData
-        taskObserver = new Observer<List<Task>>() {
-            @Override
-            public void onChanged(List<Task> tasks) {
-                adapter.submitList(tasks);
-            }
+        taskObserver = tasks -> {
+            List<ListItem> groupedList = groupTasksByDate(tasks);
+            adapter.submitList(groupedList);
         };
 
-        // --- FAB thêm mới ---
         fabAddTask.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, AddTaskActivity.class);
             startActivity(intent);
         });
 
-        // --- ChipGroup lọc dữ liệu (ĐÃ SỬA LỖI) ---
+        // ChipGroup - Gọi hàm ViewModel mới (SortedByDateGroup)
         chipGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            // 1. Xóa observer cũ nếu có
             removeObserver();
-
-            // 2. Lấy LiveData mới dựa trên chip được chọn
             if (checkedId == R.id.chip_all) {
-                currentLiveData = taskViewModel.getAllTasks();
+                currentLiveData = taskViewModel.getAllTasksSortedByDateGroup();
             } else if (checkedId == R.id.chip_personal) {
-                currentLiveData = taskViewModel.getTasksByCategory("Personal");
+                currentLiveData = taskViewModel.getTasksByCategorySortedByDateGroup("Personal");
             } else if (checkedId == R.id.chip_work) {
-                currentLiveData = taskViewModel.getTasksByCategory("Work");
+                currentLiveData = taskViewModel.getTasksByCategorySortedByDateGroup("Work");
             } else if (checkedId == R.id.chip_wishlist) {
-                currentLiveData = taskViewModel.getTasksByCategory("Wishlist");
+                currentLiveData = taskViewModel.getTasksByCategorySortedByDateGroup("Wishlist");
             }
-
-            // 3. Thêm observer mới vào LiveData mới
             if (currentLiveData != null) {
                 currentLiveData.observe(this, taskObserver);
             }
         });
 
-        // --- Hiển thị danh sách ban đầu ("Tất Cả") ---
-        currentLiveData = taskViewModel.getAllTasks();
+        // Hiển thị ban đầu (SortedByDateGroup)
+        currentLiveData = taskViewModel.getAllTasksSortedByDateGroup();
         currentLiveData.observe(this, taskObserver);
 
-
-        // --- Các nút trong BottomAppBar ---
-        // (Giữ nguyên code xử lý các nút này)
+        // --- BottomAppBar Buttons (giữ nguyên) ---
         ImageButton btnList = findViewById(R.id.btn_list);
         ImageButton btnMenu = findViewById(R.id.btn_menu);
         ImageButton btnCalendar = findViewById(R.id.btn_calendar);
         ImageButton btnNotifications = findViewById(R.id.btn_notifications);
-
-        btnList.setOnClickListener(v ->
-                Toast.makeText(this, "List Clicked", Toast.LENGTH_SHORT).show());
-        btnMenu.setOnClickListener(v ->
-                Toast.makeText(this, "Menu Clicked", Toast.LENGTH_SHORT).show());
+        btnList.setOnClickListener(v -> Toast.makeText(this, "List Clicked", Toast.LENGTH_SHORT).show());
+        btnMenu.setOnClickListener(v -> Toast.makeText(this, "Menu Clicked", Toast.LENGTH_SHORT).show());
         btnCalendar.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, CalendarActivity.class);
             startActivity(intent);
         });
-        btnNotifications.setOnClickListener(v ->
-                Toast.makeText(this, "Notifications Clicked", Toast.LENGTH_SHORT).show());
+        btnNotifications.setOnClickListener(v -> Toast.makeText(this, "Notifications Clicked", Toast.LENGTH_SHORT).show());
 
-
-        // --- ItemTouchHelper (Vuốt để Xóa/Sửa) ---
-        // (Giữ nguyên code xử lý vuốt)
+        // --- ItemTouchHelper (giữ nguyên) ---
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,
                 ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-            // ... (code onMove, onSwiped, onChildDraw giữ nguyên)
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
                 return false;
@@ -134,27 +115,23 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.OnTas
 
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                int position = viewHolder.getAdapterPosition();
-                Task task = adapter.getTaskAt(position);
+                int position = viewHolder.getBindingAdapterPosition();
+                if (position == RecyclerView.NO_POSITION) return;
 
-                if (direction == ItemTouchHelper.LEFT) { // Vuốt sang trái để hỏi XÓA
+                Task task = adapter.getTaskObjectAt(position);
+                if (task == null) {
+                    adapter.notifyItemChanged(position);
+                    return;
+                }
+                if (direction == ItemTouchHelper.LEFT) { // Xóa
                     new AlertDialog.Builder(MainActivity.this)
                             .setTitle("Xác nhận xóa")
                             .setMessage("Bạn có chắc chắn muốn xóa công việc \"" + task.getTitle() + "\"?")
-                            .setPositiveButton("Xóa", (dialog, which) -> {
-                                taskViewModel.delete(task);
-                                Toast.makeText(MainActivity.this, "Đã xóa công việc", Toast.LENGTH_SHORT).show();
-                            })
-                            .setNegativeButton("Hủy", (dialog, which) -> {
-                                adapter.notifyItemChanged(viewHolder.getAdapterPosition());
-                            })
-                            .setOnCancelListener(dialog -> {
-                                adapter.notifyItemChanged(viewHolder.getAdapterPosition());
-                            })
-                            .create()
+                            .setPositiveButton("Xóa", (dialog, which) -> taskViewModel.delete(task))
+                            .setNegativeButton("Hủy", (dialog, which) -> adapter.notifyItemChanged(position))
+                            .setOnCancelListener(dialog -> adapter.notifyItemChanged(position))
                             .show();
-
-                } else { // Vuốt sang phải để SỬA
+                } else { // Sửa
                     Intent intent = new Intent(MainActivity.this, EditTaskActivity.class);
                     intent.putExtra(EditTaskActivity.EXTRA_ID, task.getId());
                     intent.putExtra(EditTaskActivity.EXTRA_TITLE, task.getTitle());
@@ -164,58 +141,105 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.OnTas
                     intent.putExtra(EditTaskActivity.EXTRA_DUE_DATE, task.getDueDate());
                     intent.putExtra(EditTaskActivity.EXTRA_IS_COMPLETED, task.isCompleted());
                     startActivity(intent);
-
                     adapter.notifyItemChanged(position);
                 }
             }
 
             @Override
-            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
-                new RecyclerViewSwipeDecorator.Builder(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
-                        .addSwipeLeftBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.priority_high))
-                        .addSwipeLeftActionIcon(R.drawable.ic_delete)
-                        .addSwipeLeftLabel("Xóa")
-                        .setSwipeLeftLabelColor(ContextCompat.getColor(MainActivity.this, R.color.white))
-                        .addSwipeRightBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.green))
-                        .addSwipeRightActionIcon(R.drawable.ic_edit)
-                        .addSwipeRightLabel("Sửa")
-                        .setSwipeRightLabelColor(ContextCompat.getColor(MainActivity.this, R.color.white))
-                        .create()
-                        .decorate();
+            public int getSwipeDirs(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                if (viewHolder instanceof GroupedTaskAdapter.HeaderViewHolder) { return 0; }
+                return super.getSwipeDirs(recyclerView, viewHolder);
+            }
 
+            @Override
+            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+                if (viewHolder instanceof GroupedTaskAdapter.TaskViewHolder) {
+                    new RecyclerViewSwipeDecorator.Builder(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+                            .addSwipeLeftBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.priority_high))
+                            .addSwipeLeftActionIcon(R.drawable.ic_delete)
+                            .addSwipeLeftLabel("Xóa")
+                            .setSwipeLeftLabelColor(ContextCompat.getColor(MainActivity.this, R.color.white))
+                            .addSwipeRightBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.green))
+                            .addSwipeRightActionIcon(R.drawable.ic_edit)
+                            .addSwipeRightLabel("Sửa")
+                            .setSwipeRightLabelColor(ContextCompat.getColor(MainActivity.this, R.color.white))
+                            .create()
+                            .decorate();
+                }
                 super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
             }
         }).attachToRecyclerView(recyclerView);
     }
 
-    // --- Phương thức xử lý toggle checkbox ---
-    // (Giữ nguyên code này)
+    // --- onTaskToggled (giữ nguyên) ---
     @Override
     public void onTaskToggled(Task task) {
         boolean newCompletedState = !task.isCompleted();
         Task taskToUpdate = new Task(
-                task.getTitle(),
-                task.getNotes(),
-                task.getPriority(),
-                task.getCategory(),
-                newCompletedState,
-                task.getDueDate()
+                task.getTitle(), task.getNotes(), task.getPriority(), task.getCategory(),
+                newCompletedState, task.getDueDate()
         );
         taskToUpdate.setId(task.getId());
         taskViewModel.update(taskToUpdate);
     }
 
-    // --- Phương thức helper để xóa observer cũ ---
-    private void removeObserver() {
-        if (currentLiveData != null && taskObserver != null) {
-            currentLiveData.removeObserver(taskObserver);
+    // --- onHeaderClick (giữ nguyên) ---
+    @Override
+    public void onHeaderClick(HeaderItem headerItem, int position) {
+        boolean isCurrentlyExpanded = headerExpansionState.getOrDefault(headerItem.getTitle(), true);
+        headerExpansionState.put(headerItem.getTitle(), !isCurrentlyExpanded);
+        if (currentLiveData != null && currentLiveData.getValue() != null) {
+            List<ListItem> updatedGroupedList = groupTasksByDate(currentLiveData.getValue());
+            adapter.submitList(updatedGroupedList);
         }
     }
 
-    // --- Ghi đè onDestroy để đảm bảo observer được xóa khi Activity bị hủy ---
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        removeObserver(); // Xóa observer khi activity bị hủy
+    // --- removeObserver, onDestroy (giữ nguyên) ---
+    private void removeObserver() { if (currentLiveData != null && taskObserver != null) { currentLiveData.removeObserver(taskObserver); } }
+    @Override protected void onDestroy() { super.onDestroy(); removeObserver(); }
+
+    // --- groupTasksByDate (giữ nguyên) ---
+    private List<ListItem> groupTasksByDate(List<Task> tasks) {
+        List<ListItem> items = new ArrayList<>();
+        if (tasks == null) return items;
+
+        long todayStartMillis = getStartOfDayMillis(System.currentTimeMillis());
+        long tomorrowStartMillis = todayStartMillis + (24 * 60 * 60 * 1000);
+
+        String currentHeaderTitle = null;
+        HeaderItem currentHeaderItem = null;
+
+        for (Task task : tasks) {
+            long dueDateMillis = task.getDueDate();
+            String headerTitle;
+
+            if (dueDateMillis <= 0) { headerTitle = "Không có ngày hạn"; }
+            else if (dueDateMillis < todayStartMillis) { headerTitle = "Trước"; }
+            else if (dueDateMillis < tomorrowStartMillis) { headerTitle = "Hôm nay"; }
+            else { headerTitle = "Tương lai"; }
+
+            boolean isExpanded = headerExpansionState.getOrDefault(headerTitle, true);
+
+            if (!headerTitle.equals(currentHeaderTitle)) {
+                currentHeaderTitle = headerTitle;
+                currentHeaderItem = new HeaderItem(currentHeaderTitle);
+                currentHeaderItem.setExpanded(isExpanded);
+                items.add(currentHeaderItem);
+            }
+
+            if (currentHeaderItem != null && currentHeaderItem.isExpanded()) {
+                items.add(new TaskItem(task));
+            }
+        }
+        return items;
+    }
+
+    // --- getStartOfDayMillis (giữ nguyên) ---
+    private long getStartOfDayMillis(long millis) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(millis);
+        calendar.set(Calendar.HOUR_OF_DAY, 0); calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0); calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTimeInMillis();
     }
 }

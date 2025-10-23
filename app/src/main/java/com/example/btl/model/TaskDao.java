@@ -9,7 +9,6 @@ import androidx.room.Delete;
 
 import java.util.List;
 
-// Model: Giao diện truy cập dữ liệu (Data Access Object) cho bảng Task
 @Dao
 public interface TaskDao {
 
@@ -25,16 +24,43 @@ public interface TaskDao {
     @Query("DELETE FROM tasks")
     void deleteAllTasks();
 
-    // SỬA ĐỔI QUERY: Sắp xếp theo isCompleted (ASC - false lên trước)
-    // rồi mới đến priority
-    @Query("SELECT * FROM tasks ORDER BY isCompleted ASC, priority DESC")
-    LiveData<List<Task>> getAllTasks();
+    // Query cũ (giữ lại nếu cần)
+    @Query("SELECT * FROM tasks ORDER BY priority DESC")
+    LiveData<List<Task>> getAllTasks_SortByPriority();
 
-    // SỬA ĐỔI QUERY: Tương tự, sắp xếp theo isCompleted trước
-    @Query("SELECT * FROM tasks WHERE category = :category ORDER BY isCompleted ASC, priority DESC")
-    LiveData<List<Task>> getTasksByCategory(String category);
+    // Query cũ (giữ lại nếu cần)
+    @Query("SELECT * FROM tasks WHERE category = :category ORDER BY priority DESC")
+    LiveData<List<Task>> getTasksByCategory_SortByPriority(String category);
 
-    // SỬA ĐỔI QUERY: Tương tự, sắp xếp theo isCompleted trước
+    // Query cũ (giữ lại nếu cần)
     @Query("SELECT * FROM tasks WHERE dueDate >= :startOfDay AND dueDate < :endOfDay ORDER BY isCompleted ASC, priority DESC")
     LiveData<List<Task>> getTasksForDate(long startOfDay, long endOfDay);
+
+
+    // --- QUERY ĐÃ SỬA LỖI SẮP XẾP NHÓM ---
+    // Sắp xếp theo: Nhóm Ngày -> Hoàn thành -> Ưu tiên
+    @Query("SELECT *, " +
+            "CASE " +
+            "  WHEN dueDate <= 0 THEN 3 " + // Nhóm "Không có ngày hạn" = 3
+            "  WHEN dueDate < :todayStartMillis THEN 0 " + // Nhóm "Trước" = 0
+            "  WHEN dueDate < :tomorrowStartMillis THEN 1 " + // Nhóm "Hôm nay" = 1
+            "  ELSE 2 " + // Nhóm "Tương lai" = 2
+            "END AS date_group " +
+            "FROM tasks " +
+            "ORDER BY date_group ASC, isCompleted ASC, priority DESC")
+    LiveData<List<Task>> getAllTasksSortedByDateGroup(long todayStartMillis, long tomorrowStartMillis); //
+
+    // --- QUERY ĐÃ SỬA LỖI SẮP XẾP NHÓM (LỌC THEO CATEGORY) ---
+    // Sắp xếp theo: Nhóm Ngày -> Hoàn thành -> Ưu tiên
+    @Query("SELECT *, " +
+            "CASE " +
+            "  WHEN dueDate <= 0 THEN 3 " +
+            "  WHEN dueDate < :todayStartMillis THEN 0 " +
+            "  WHEN dueDate < :tomorrowStartMillis THEN 1 " +
+            "  ELSE 2 " +
+            "END AS date_group " +
+            "FROM tasks " +
+            "WHERE category = :category " + // Thêm điều kiện lọc
+            "ORDER BY date_group ASC, isCompleted ASC, priority DESC")
+    LiveData<List<Task>> getTasksByCategorySortedByDateGroup(String category, long todayStartMillis, long tomorrowStartMillis); //
 }
