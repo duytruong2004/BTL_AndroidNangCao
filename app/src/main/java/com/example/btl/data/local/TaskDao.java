@@ -58,4 +58,6 @@ public interface TaskDao {
             "WHERE category = :category " +
             "ORDER BY date_group ASC, isCompleted ASC, priority DESC")
     LiveData<List<Task>> getTasksByCategorySortedByDateGroup(String category, long todayStartMillis, long tomorrowStartMillis);
+    @Query("SELECT * FROM tasks WHERE isCompleted = 0 ORDER BY priority DESC LIMIT 10")
+    List<Task> getTasksForWidget();
 }

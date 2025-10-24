@@ -23,6 +23,7 @@ import com.example.btl.ui.addedit.AddEditTaskActivity;
 import com.example.btl.ui.calendar.CalendarActivity;
 import com.example.btl.ui.viewmodel.TaskViewModel;
 import com.example.btl.util.DateUtil;
+import com.example.btl.widget.TaskWidgetProvider; // <-- IMPORT MỚI CHO WIDGET
 
 import com.google.android.material.bottomappbar.BottomAppBar;
 import com.google.android.material.chip.ChipGroup;
@@ -35,11 +36,10 @@ import java.util.Map;
 
 import it.xabaras.android.recyclerview.swipedecorator.RecyclerViewSwipeDecorator;
 
-// --- CẬP NHẬT: Thêm OnTaskClickListener vào danh sách implements ---
 public class MainActivity extends AppCompatActivity
         implements GroupedTaskAdapter.OnTaskToggleListener,
         GroupedTaskAdapter.OnHeaderClickListener,
-        GroupedTaskAdapter.OnTaskClickListener { // <-- THÊM VÀO ĐÂY
+        GroupedTaskAdapter.OnTaskClickListener {
 
     private TaskViewModel taskViewModel;
     private GroupedTaskAdapter adapter;
@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity
         recyclerView.setAdapter(adapter);
         adapter.setOnTaskToggleListener(this);
         adapter.setOnHeaderClickListener(this);
-        adapter.setOnTaskClickListener(this); // <-- CẬP NHẬT: Set listener mới
+        adapter.setOnTaskClickListener(this);
 
         taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
 
@@ -79,7 +79,6 @@ public class MainActivity extends AppCompatActivity
             startActivity(intent);
         });
 
-        // ... (Code chipGroup và BottomAppBar không đổi) ...
         chipGroup.setOnCheckedChangeListener((group, checkedId) -> {
             removeObserver();
             if (checkedId == R.id.chip_all) {
@@ -112,7 +111,6 @@ public class MainActivity extends AppCompatActivity
         btnNotifications.setOnClickListener(v -> Toast.makeText(this, "Notifications Clicked", Toast.LENGTH_SHORT).show());
 
 
-        // ... (Code ItemTouchHelper không đổi) ...
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,
                 ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
@@ -134,7 +132,12 @@ public class MainActivity extends AppCompatActivity
                     new AlertDialog.Builder(MainActivity.this)
                             .setTitle("Xác nhận xóa")
                             .setMessage("Bạn có chắc chắn muốn xóa công việc \"" + task.getTitle() + "\"?")
-                            .setPositiveButton("Xóa", (dialog, which) -> taskViewModel.delete(task))
+                            // --- CẬP NHẬT Ở ĐÂY ---
+                            .setPositiveButton("Xóa", (dialog, which) -> {
+                                taskViewModel.delete(task);
+                                notifyWidgetUpdate(); // Báo cho widget cập nhật
+                            })
+                            // --- KẾT THÚC CẬP NHẬT ---
                             .setNegativeButton("Hủy", (dialog, which) -> adapter.notifyItemChanged(position))
                             .setOnCancelListener(dialog -> adapter.notifyItemChanged(position))
                             .show();
@@ -180,13 +183,11 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
-        // Giữ lại phần sửa lỗi UI vuốt
         if (adapter != null) {
             adapter.notifyDataSetChanged();
         }
     }
 
-    // Hàm onTaskToggled (Đã sửa lỗi check/uncheck)
     @Override
     public void onTaskToggled(Task task) {
         boolean newCompletedState = !task.isCompleted();
@@ -200,9 +201,10 @@ public class MainActivity extends AppCompatActivity
         );
         taskToUpdate.setId(task.getId());
         taskViewModel.update(taskToUpdate);
+
+        notifyWidgetUpdate(); // <-- CẬP NHẬT Ở ĐÂY (Báo cho widget cập nhật)
     }
 
-    // Hàm onHeaderClick (Không đổi)
     @Override
     public void onHeaderClick(HeaderItem headerItem, int position) {
         boolean isCurrentlyExpanded = headerExpansionState.getOrDefault(headerItem.getTitle(), true);
@@ -213,10 +215,8 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    // --- CẬP NHẬT: Thêm hàm xử lý sự kiện click vào task ---
     @Override
     public void onTaskClick(Task task) {
-        // Mở màn hình AddEditTaskActivity (giống hệt logic của vuốt "Sửa")
         Intent intent = new Intent(MainActivity.this, AddEditTaskActivity.class);
         intent.putExtra(AddEditTaskActivity.EXTRA_ID, task.getId());
         intent.putExtra(AddEditTaskActivity.EXTRA_TITLE, task.getTitle());
@@ -227,10 +227,7 @@ public class MainActivity extends AppCompatActivity
         intent.putExtra(AddEditTaskActivity.EXTRA_IS_COMPLETED, task.isCompleted());
         startActivity(intent);
     }
-    // --- KẾT THÚC CẬP NHẬT ---
 
-
-    // --- Các hàm còn lại (Không đổi) ---
     private void removeObserver() { if (currentLiveData != null && taskObserver != null) { currentLiveData.removeObserver(taskObserver); } }
     @Override protected void onDestroy() { super.onDestroy(); removeObserver(); }
 
@@ -268,4 +265,15 @@ public class MainActivity extends AppCompatActivity
         }
         return items;
     }
+
+    // --- THÊM HÀM MỚI NÀY ĐỂ CẬP NHẬT WIDGET ---
+    /**
+     * Gửi broadcast thông báo cho widget cập nhật
+     */
+    private void notifyWidgetUpdate() {
+        Intent updateWidgetIntent = new Intent(this, TaskWidgetProvider.class);
+        updateWidgetIntent.setAction(TaskWidgetProvider.ACTION_UPDATE_WIDGET);
+        sendBroadcast(updateWidgetIntent);
+    }
+    // --- KẾT THÚC THÊM HÀM ---
 }

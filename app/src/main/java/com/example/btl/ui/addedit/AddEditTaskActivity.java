@@ -3,6 +3,8 @@ package com.example.btl.ui.addedit; // <-- Package đã thay đổi
 import android.Manifest;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -21,6 +23,7 @@ import com.example.btl.R;
 import com.example.btl.data.model.Task; // <-- Import đã thay đổi
 import com.example.btl.ui.viewmodel.TaskViewModel; // <-- Import đã thay đổi
 import com.example.btl.util.AlarmScheduler; // <-- Import mới
+import com.example.btl.widget.TaskWidgetProvider;
 
 import java.text.DateFormat;
 import java.util.Calendar;
@@ -148,6 +151,12 @@ public class AddEditTaskActivity extends AppCompatActivity {
             taskViewModel.insert(task);
             Toast.makeText(this, "Task saved", Toast.LENGTH_SHORT).show();
         }
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(this);
+        int[] appWidgetIds = appWidgetManager.getAppWidgetIds(
+                new ComponentName(this, TaskWidgetProvider.class)
+        );
+        // Báo cho ListView của widget biết dữ liệu đã thay đổi
+        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.widget_list_view);
         finish();
     }
 
